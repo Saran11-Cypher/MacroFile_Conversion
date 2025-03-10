@@ -118,8 +118,11 @@ print("\n✅ Excel file updated successfully!")
 
 
 
+
 🔎 Available Folders (Normalized): dict_keys(['benefitplancomponent', 'benefitplantemplate', 'servicecategory', 'valuelist'])
-🔎 Approved Config Types: {'benefitplantemplate', 'servicecategory', 'valuelist', 'benefitplancomponent'}
+🔎 Approved Config Types: {'valuelist', 'benefitplancomponent', 'benefitplantemplate', 'servicecategory'}
+
+🔎 config Folders (Normalized): ['valuelist', 'attributetype', 'userdefinedterm', 'lineofbusiness', 'product', 'servicecategory', 'benefitnetwork', 'networkdefinitioncomponent', 'benefitplancomponent', 'wraparoundbenefitplan', 'benefitplanrider', 'benefitplantemplate', 'account', 'benefitplan', 'accountplanselection']     
 
 ❌ Error: No matching config folders found in the parent folder.
 👉 Check if folder names match exactly with Business Approved List.
