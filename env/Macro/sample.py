@@ -3,9 +3,8 @@ import pandas as pd
 import re
 from openpyxl import load_workbook
 
-# Define paths
-EXCEL_FILE = "E:\\PYTHON\\Django\\Workspace\\Macro_Generator\\env\\Macro_Functional_Excel.xlsx"  # Update this path
-UPLOAD_FOLDER = "E:\\PYTHON\\ServiceCategory"  # Parent folder containing config subfolders
+EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
+UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
 
 # Ensure the folder exists
 if not os.path.exists(UPLOAD_FOLDER):
