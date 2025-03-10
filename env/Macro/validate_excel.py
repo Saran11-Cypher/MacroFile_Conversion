@@ -3,9 +3,8 @@ import pandas as pd
 import re
 from openpyxl import load_workbook
 
-# Define paths
-EXCEL_FILE = "E:\\PYTHON\\Django\\Workspace\\Macro_Generator\\env\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
-UPLOAD_FOLDER = "E:\\PYTHON\\ServiceCategory"  # Change to the folder containing uploaded files
+EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
+UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
 
 # Ensure the folder exists
 if not os.path.exists(UPLOAD_FOLDER):
@@ -25,75 +24,86 @@ config_load_order = [
     "BenefitPlanTemplate", "Account", "BenefitPlan", "AccountPlanSelection"
 ]
 
-# Function to normalize and clean text
+# Function to normalize text (remove special characters, spaces, and lowercase)
 def normalize_text(text):
-    """Removes special characters, converts to lowercase, and standardizes spaces/hyphens."""
     return re.sub(r'[^a-zA-Z0-9\s-]', '', str(text)).strip().lower()
 
-# Get list of subfolders inside the parent folder
-available_folders = {normalize_text(f): f for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))}
-
 # Load "Business Approved List" into a DataFrame
-df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)  # Ensure all columns are strings
-df_bal["Config Type"] = df_bal["Config Type"].astype(str).str.strip()
+df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
+df_bal["Config Type"] = df_bal["Config Type"].astype(str).apply(normalize_text)
 
-# Filter config_load_order based on what exists in Business Approved List
-normalized_config_types = {normalize_text(cfg): cfg for cfg in config_load_order}
-normalized_df_bal_types = df_bal["Config Type"].dropna().apply(normalize_text)
-available_config_types = [normalized_config_types[cfg] for cfg in normalized_df_bal_types if cfg in normalized_config_types]
+# Get config types mentioned in "Business Approved List"
+approved_config_types = set(df_bal["Config Type"].dropna().unique())
 
-# **🔹 Fix: Only check the sequence of available configurations**
-expected_order = [cfg for cfg in config_load_order if cfg in available_config_types]
+# Get available folders inside UPLOAD_FOLDER
+available_folders = {normalize_text(f): os.path.join(UPLOAD_FOLDER, f) 
+                     for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))}
 
-if available_config_types != expected_order:
-    print(f"❌ Error: Invalid Order! Expected sequence: {expected_order}, but found {available_config_types}.")
-    exit()
+# Select only folders present in both "Business Approved List" and predefined order
+selected_folders = {config: available_folders[config] for config in config_load_order if config in available_folders and config in approved_config_types}
 
-# Process each selected folder based on Business Approved List
-selected_folders = {
-    config: os.path.join(UPLOAD_FOLDER, available_folders[normalize_text(config)])
-    for config in available_config_types if normalize_text(config) in available_folders
-}
-
-# Validate if required folders exist
 if not selected_folders:
     print("❌ Error: No matching config folders found inside the parent folder.")
     exit()
 
-# Update "Main" sheet with folder names in correct order
-for config_type, folder_path in selected_folders.items():
+# Validate folder order: Ensure that they follow the predefined sequence
+ordered_folders = list(selected_folders.keys())  # Extract keys in selected order
+sorted_folders = sorted(ordered_folders, key=lambda x: config_load_order.index(x))
+
+if ordered_folders != sorted_folders:
+    print("❌ Error: Invalid Order! Files must be uploaded in the correct sequence:")
+    print(" → ".join(sorted_folders))  # Display expected sequence
+    exit()
+
+# Process each selected folder in correct order
+for config_type in sorted_folders:
+    folder_path = selected_folders[config_type]
     uploaded_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
     file_count = len(uploaded_files)
-    ws_main.append([config_type, file_count, folder_path, "Pending", "Pending"])
+
+    # Update the "Main" sheet dynamically
+    ws_main.append([config_type, file_count, "Pending", "Pending", "Pending"])
+
+# Assign order dynamically based on available configurations only
+df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(x) if x in config_load_order else -1)
+
+# Validate order in Business Approved List
+valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
+
+if not valid_orders.is_monotonic_increasing:
+    print("❌ Error: Invalid Order in 'Business Approved List'! Please correct the sequence.")
+    exit()
+
+# Remove the temporary "Order" column (not needed in final output)
+df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to match config names with uploaded files
-def find_matching_file(config_name):
-    """Finds files that contain all words from the config_name in any order."""
-    config_words = normalize_text(config_name).split()  # Normalize config name and split into words
-    
-    for folder_path in selected_folders.values():
-        for filename in os.listdir(folder_path):
-            if os.path.isfile(os.path.join(folder_path, filename)):
-                cleaned_filename = normalize_text(filename)  # Normalize filename
-                if all(word in cleaned_filename for word in config_words):
-                    return os.path.join(folder_path, filename)  # Return the first matched file
+def find_matching_file(config_name, folder_path):
+    config_words = normalize_text(config_name).split()
 
+    for filename in os.listdir(folder_path):
+        if os.path.isfile(os.path.join(folder_path, filename)):
+            cleaned_filename = normalize_text(filename)
+            if all(word in cleaned_filename for word in config_words):
+                return filename  # Return first matched file
     return None  # No match found
 
 # Check for HRL availability and update DataFrame
 for index, row in df_bal.iterrows():
+    config_type = row["Config Type"]
     config_name = row["Config Name"]
-    
+
     if pd.isna(config_name) or not str(config_name).strip():
         continue  # Skip empty config names
 
-    matching_file = find_matching_file(config_name)
+    if config_type in selected_folders:
+        matching_file = find_matching_file(config_name, selected_folders[config_type])
 
-    if matching_file:
-        df_bal.at[index, "HRL Available?"] = "HRL Found"
-        df_bal.at[index, "File Name is correct in export sheet"] = str(matching_file)  # Ensure string type
-    else:
-        df_bal.at[index, "HRL Available?"] = "Not Found"
+        if matching_file:
+            df_bal.at[index, "HRL Available?"] = "HRL Found"
+            df_bal.at[index, "File Name is correct in export sheet"] = os.path.join(selected_folders[config_type], matching_file)
+        else:
+            df_bal.at[index, "HRL Available?"] = "Not Found"
 
 # Save updates to Excel
 for row_idx, row in df_bal.iterrows():
