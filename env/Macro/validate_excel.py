@@ -60,7 +60,7 @@ for config_type, folder_path in selected_folders.items():
     uploaded_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
     file_count = len(uploaded_files)
 
-    # 📝 Update the "Main" sheet dynamically
+    # 📝 Append data to "Main" sheet dynamically
     ws_main.append([config_type, file_count, "Pending", "Pending", "Pending"])
 
 # ✅ Assign order dynamically based on available configurations
@@ -108,10 +108,13 @@ for index, row in df_bal.iterrows():
         else:
             df_bal.at[index, "HRL Available?"] = "Not Found"
 
-# ✅ Save updates to Excel
+# ✅ Write DataFrame to "Business Approved List" Sheet
 for row_idx, row in df_bal.iterrows():
     for col_idx, value in enumerate(row):
-        ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
+        ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as a string
 
+# ✅ Save Excel Properly (This Fixes the Issue)
 wb.save(EXCEL_FILE)
+wb.close()  # ✅ Explicitly close the workbook
+
 print("✅ Excel file updated successfully!")
