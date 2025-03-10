@@ -115,3 +115,11 @@ for row_idx, row in df_bal.iterrows():
 
 wb.save(EXCEL_FILE)
 print("\n✅ Excel file updated successfully!")
+
+
+
+🔎 Available Folders (Normalized): dict_keys(['benefitplancomponent', 'benefitplantemplate', 'servicecategory', 'valuelist'])
+🔎 Approved Config Types: {'benefitplantemplate', 'servicecategory', 'valuelist', 'benefitplancomponent'}
+
+❌ Error: No matching config folders found in the parent folder.
+👉 Check if folder names match exactly with Business Approved List.
