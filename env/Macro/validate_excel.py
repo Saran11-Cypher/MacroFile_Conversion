@@ -4,8 +4,8 @@ import re
 from openpyxl import load_workbook
 
 # Define paths
-EXCEL_FILE = "E:\\PYTHON\\Django\\Workspace\\Macro_Generator\\env\\Macro_Functional_Excel.xlsx"
-UPLOAD_FOLDER = "E:\\PYTHON\\ServiceCategory"
+EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
+UPLOAD_FOLDER = "C:\\1\\BenefitPlanTemplate"  # Change to the folder containing uploaded files
 
 # Ensure the folder exists
 if not os.path.exists(UPLOAD_FOLDER):
@@ -41,8 +41,13 @@ df_bal["File Name is correct in export sheet"] = df_bal["File Name is correct in
 # Filter config_load_order to only include present config types in the uploaded file
 available_config_types = [cfg for cfg in config_load_order if cfg in df_bal["Config Type"].values]
 
+if available_config_types:
+    df_bal["Order"] = df_bal["Config Type"].apply(lambda x: available_config_types.index(x) if x in available_config_types else -1)
+else:
+    df_bal["Order"] = -1
+   
 # Assign order dynamically based on available configurations only
-df_bal["Order"] = df_bal["Config Type"].apply(lambda x: available_config_types.index(x) if x in available_config_types else -1)
+
 
 
 # Validate order: If not in increasing sequence, show error and exit
