@@ -42,10 +42,11 @@ normalized_config_types = {normalize_text(cfg): cfg for cfg in config_load_order
 normalized_df_bal_types = df_bal["Config Type"].dropna().apply(normalize_text)
 available_config_types = [normalized_config_types[cfg] for cfg in normalized_df_bal_types if cfg in normalized_config_types]
 
-# Validate order: If not in increasing sequence, show error and exit
+# **🔹 Fix: Only check the sequence of available configurations**
 expected_order = [cfg for cfg in config_load_order if cfg in available_config_types]
+
 if available_config_types != expected_order:
-    print("❌ Error: Invalid Order! Please arrange the data correctly.")
+    print(f"❌ Error: Invalid Order! Expected sequence: {expected_order}, but found {available_config_types}.")
     exit()
 
 # Process each selected folder based on Business Approved List
