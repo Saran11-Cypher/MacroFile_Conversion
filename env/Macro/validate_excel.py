@@ -14,7 +14,23 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 # Load workbook and sheets
 wb = load_workbook(EXCEL_FILE)
+ws_main = wb["Main"]
 ws_bal = wb["Business Approved List"]
+
+# List all uploaded files
+uploaded_files = [f for f in os.listdir(UPLOAD_FOLDER) if os.path.isfile(os.path.join(UPLOAD_FOLDER, f))]
+file_count = len(uploaded_files)
+
+# Update "Main" sheet with file count
+ws_main.append(["Service_Category", file_count, "Pending", "Pending", "Pending"])
+
+# Define the correct config load order
+config_load_order = [
+    "ValueList", "AttributeType", "UserDefinedTerm", "LineOfBusiness",
+    "Product", "ServiceCategory", "BenefitNetwork", "NetworkDefinitionComponent",
+    "BenefitPlanComponent", "WrapAroundBenefitPlan", "BenefitPlanRider",
+    "BenefitPlanTemplate", "Account", "BenefitPlan", "AccountPlanSelection"
+]
 
 # Load "Business Approved List" into a DataFrame
 df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)  # Ensure all columns are strings
@@ -22,8 +38,16 @@ df_bal["Config Type"] = df_bal["Config Type"].astype(str)
 df_bal["HRL Available?"] = df_bal["HRL Available?"].astype(str)
 df_bal["File Name is correct in export sheet"] = df_bal["File Name is correct in export sheet"].astype(str)  # Explicit conversion
 
-# List all uploaded files
-uploaded_files = [f for f in os.listdir(UPLOAD_FOLDER) if os.path.isfile(os.path.join(UPLOAD_FOLDER, f))]
+# Assign order index based on predefined sequence
+df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(x) if x in config_load_order else -1)
+
+# Validate order: If not in increasing sequence, show error and exit
+if not df_bal["Order"].is_monotonic_increasing:
+    print("❌ Error: Invalid Order! Please arrange the data correctly.")
+    exit()
+    
+# Remove the temporary "Order" column (not needed in final output)
+df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to normalize and clean text
 def normalize_text(text):
