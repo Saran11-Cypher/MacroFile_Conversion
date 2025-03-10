@@ -21,7 +21,7 @@ ws_bal = wb["Business Approved List"]
 uploaded_files = [f for f in os.listdir(UPLOAD_FOLDER) if os.path.isfile(os.path.join(UPLOAD_FOLDER, f))]
 file_count = len(uploaded_files)
 
-# Update "Main" sheet with file count
+# Update "Main" sheet with file count 
 ws_main.append(["Service_Category", file_count, "Pending", "Pending", "Pending"])
 
 # Define the correct config load order
@@ -38,8 +38,12 @@ df_bal["Config Type"] = df_bal["Config Type"].astype(str)
 df_bal["HRL Available?"] = df_bal["HRL Available?"].astype(str)
 df_bal["File Name is correct in export sheet"] = df_bal["File Name is correct in export sheet"].astype(str)  # Explicit conversion
 
-# Assign order index based on predefined sequence
-df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(x) if x in config_load_order else -1)
+# Filter config_load_order to only include present config types in the uploaded file
+available_config_types = [cfg for cfg in config_load_order if cfg in df_bal["Config Type"].values]
+
+# Assign order dynamically based on available configurations only
+df_bal["Order"] = df_bal["Config Type"].apply(lambda x: available_config_types.index(x) if x in available_config_types else -1)
+
 
 # Validate order: If not in increasing sequence, show error and exit
 if not df_bal["Order"].is_monotonic_increasing:
