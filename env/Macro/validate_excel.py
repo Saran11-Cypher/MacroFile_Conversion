@@ -3,95 +3,95 @@ import pandas as pd
 import re
 from openpyxl import load_workbook
 
-# ✅ Define Paths
-EXCEL_FILE = r"C:\Users\n925072\Downloads\MacroFile_Conversion-master\MacroFile_Conversion-master\New folder\convertor\Macro_Functional_Excel.xlsx"  
-UPLOAD_FOLDER = r"C:\1"  # Change to your folder path
+# 🔹 Define Constants
+EXCEL_FILE = r"C:\Users\n925072\Downloads\Macro_Functional_Excel.xlsx"  # Update with actual file path
+UPLOAD_FOLDER = r"C:\1"  # Update with your upload folder path
 
-# ✅ Check if Upload Folder Exists
+# ✅ Ensure the folder exists
 if not os.path.exists(UPLOAD_FOLDER):
     print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
     exit()
 
-# ✅ Load Workbook and Sheets
+# ✅ Load workbook and sheets
 wb = load_workbook(EXCEL_FILE)
 ws_main = wb["Main"]
 ws_bal = wb["Business Approved List"]
 
-# ✅ Define the correct config load order
+# ✅ Define the correct config load order (Normalized)
 config_load_order = [
-    "ValueList", "AttributeType", "UserDefinedTerm", "LineOfBusiness",
-    "Product", "ServiceCategory", "BenefitNetwork", "NetworkDefinitionComponent",
-    "BenefitPlanComponent", "WrapAroundBenefitPlan", "BenefitPlanRider",
-    "BenefitPlanTemplate", "Account", "BenefitPlan", "AccountPlanSelection"
+    "valuelist", "attributetype", "userdefinedterm", "lineofbusiness",
+    "product", "servicecategory", "benefitnetwork", "networkdefinitioncomponent",
+    "benefitplancomponent", "wraparoundbenefitplan", "benefitplanrider",
+    "benefitplantemplate", "account", "benefitplan", "accountplanselection"
 ]
 
-# ✅ Function to normalize text for consistent comparison
+# ✅ Function to normalize text for consistent matching
 def normalize_text(text):
-    """Removes special characters, keeps spaces, and converts to lowercase."""
-    return re.sub(r'[^a-zA-Z0-9\s-]', '', str(text)).strip().lower()
+    """Converts to lowercase, removes special characters, and trims spaces."""
+    return re.sub(r'[^a-zA-Z0-9]', '', str(text)).strip().lower()
 
 # ✅ Load "Business Approved List" into a DataFrame
-df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)  
+df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
 df_bal["Config Type"] = df_bal["Config Type"].astype(str).apply(normalize_text)
 
-# ✅ Get Config Types from Business Approved List
+# ✅ Get the config types mentioned in "Business Approved List"
 approved_config_types = set(df_bal["Config Type"].dropna().unique())
 
-# ✅ List and Normalize Available Folders
+# ✅ Get list of subfolders inside the parent folder (UPLOAD_FOLDER)
 available_folders = {normalize_text(f): os.path.join(UPLOAD_FOLDER, f) 
                      for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))}
 
-# 🔹 Debugging: Print Folder and Config Type Information
-print("\n🔎 Available Folders (Normalized):", available_folders.keys())
-print("🔎 Approved Config Types:", approved_config_types)
+# 🔍 Debugging Outputs
+print(f"🔎 Available Folders (Normalized): {list(available_folders.keys())}")
+print(f"🔎 Approved Config Types: {approved_config_types}")
 
-# ✅ Select only folders present in both the config load order and "Business Approved List"
+# ✅ Select only folders that match both the config load order and Business Approved List
 selected_folders = {config: available_folders[config] for config in config_load_order 
                     if config in available_folders and config in approved_config_types}
 
-# ✅ Error Handling: If No Matching Folders Found
+# 🚨 Error Handling: No matching folders
 if not selected_folders:
-    print("\n❌ Error: No matching config folders found in the parent folder.")
+    print("❌ Error: No matching config folders found in the parent folder.")
     print("👉 Check if folder names match exactly with Business Approved List.")
     exit()
 
-# ✅ Process Each Selected Folder
+# ✅ Process each selected folder
 for config_type, folder_path in selected_folders.items():
     uploaded_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
     file_count = len(uploaded_files)
 
-    # ✅ Update the "Main" Sheet Dynamically
+    # 📝 Update the "Main" sheet dynamically
     ws_main.append([config_type, file_count, "Pending", "Pending", "Pending"])
 
-# ✅ Assign Order Based on Available Configurations
+# ✅ Assign order dynamically based on available configurations
 df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(x) if x in config_load_order else -1)
 
-# ✅ Validate Order: If Not in Increasing Sequence, Show Error
+# 🚨 Validate Order: Ensure it's in increasing sequence
 valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
 
 if not valid_orders.is_monotonic_increasing:
-    print("\n❌ Error: Invalid Order! Please arrange the data correctly.")
+    print("❌ Error: Invalid Order! Please arrange the data correctly.")
     exit()
 
-# ✅ Remove Temporary "Order" Column
+# 🛑 Remove the temporary "Order" column (not needed in final output)
 df_bal.drop(columns=["Order"], inplace=True)
 
-# ✅ Function to Match Config Names with Uploaded Files
+# ✅ Function to match config names with uploaded files
 def find_matching_file(config_name, folder_path):
-    """Finds files that contain all words from config_name in any order."""
+    """Finds files that contain all words from the config_name in any order."""
     config_words = normalize_text(config_name).split()
 
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
             cleaned_filename = normalize_text(filename)
 
-            # ✅ Ensure all words in config_name exist in the filename
+            # Ensure all words in config_name exist in the filename
             if all(word in cleaned_filename for word in config_words):
-                return filename  # ✅ Return the first matched file
+                return filename  # Return the first matched file
 
-    return None  # ❌ No match found
+    return None  # No match found
 
-# ✅ Check for HRL Availability and Update DataFrame
+# ✅ Check for HRL availability and update DataFrame
 for index, row in df_bal.iterrows():
     config_type = row["Config Type"]
     config_name = row["Config Name"]
@@ -108,21 +108,10 @@ for index, row in df_bal.iterrows():
         else:
             df_bal.at[index, "HRL Available?"] = "Not Found"
 
-# ✅ Save Updates to Excel
+# ✅ Save updates to Excel
 for row_idx, row in df_bal.iterrows():
     for col_idx, value in enumerate(row):
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
 
 wb.save(EXCEL_FILE)
-print("\n✅ Excel file updated successfully!")
-
-
-
-
-🔎 Available Folders (Normalized): dict_keys(['benefitplancomponent', 'benefitplantemplate', 'servicecategory', 'valuelist'])
-🔎 Approved Config Types: {'valuelist', 'benefitplancomponent', 'benefitplantemplate', 'servicecategory'}
-
-🔎 config Folders (Normalized): ['valuelist', 'attributetype', 'userdefinedterm', 'lineofbusiness', 'product', 'servicecategory', 'benefitnetwork', 'networkdefinitioncomponent', 'benefitplancomponent', 'wraparoundbenefitplan', 'benefitplanrider', 'benefitplantemplate', 'account', 'benefitplan', 'accountplanselection']     
-
-❌ Error: No matching config folders found in the parent folder.
-👉 Check if folder names match exactly with Business Approved List.
+print("✅ Excel file updated successfully!")
