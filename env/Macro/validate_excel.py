@@ -35,10 +35,12 @@ config_load_order = [
 # Load "Business Approved List" into a DataFrame
 df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)  # Read all columns as strings
 
-# Ensure required columns exist
-df_bal["Config Type"] = df_bal["Config Type"].astype(str).str.strip()
-df_bal["HRL Available?"] = df_bal["HRL Available?"].astype(str)
-df_bal["File Name is correct in export sheet"] = df_bal["File Name is correct in export sheet"].astype(str)
+# Ensure required columns exist and fill NaN values
+for col in ["Config Type", "HRL Available?", "File Name is correct in export sheet"]:
+    if col not in df_bal.columns:
+        df_bal[col] = "N/A"  # Default value if column is missing
+    else:
+        df_bal[col] = df_bal[col].fillna("N/A")
 
 # Normalize function to prevent mismatches
 def normalize_text(text):
@@ -53,10 +55,7 @@ normalized_df_bal_types = df_bal["Config Type"].dropna().apply(normalize_text)
 available_config_types = [normalized_config_types[cfg] for cfg in normalized_df_bal_types if cfg in normalized_config_types]
 
 # Assign order dynamically based on available configurations only
-if available_config_types:
-    df_bal["Order"] = df_bal["Config Type"].apply(lambda x: available_config_types.index(x) if normalize_text(x) in map(normalize_text, available_config_types) else -1)
-else:
-    df_bal["Order"] = -1
+df_bal["Order"] = df_bal["Config Type"].apply(lambda x: available_config_types.index(x) if normalize_text(x) in map(normalize_text, available_config_types) else -1)
 
 # Validate order: If not in increasing sequence, show error and exit
 valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
@@ -96,6 +95,13 @@ for index, row in df_bal.iterrows():
         df_bal.at[index, "File Name is correct in export sheet"] = os.path.join(UPLOAD_FOLDER, matching_file)
     else:
         df_bal.at[index, "HRL Available?"] = "Not Found"
+
+# Fill any remaining NaN values before saving
+df_bal.fillna("N/A", inplace=True)
+
+# Debugging: Print any rows that still have NaN values
+print("🔍 Debugging: Rows with NaN values (if any):")
+print(df_bal[df_bal.isna().any(axis=1)])  # Show rows with NaN
 
 # Save updates to Excel
 for row_idx, row in df_bal.iterrows():
