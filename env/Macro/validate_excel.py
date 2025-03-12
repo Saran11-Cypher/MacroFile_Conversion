@@ -1,14 +1,14 @@
 import os
-import shutil
 import pandas as pd
 import re
+import shutil
 from openpyxl import load_workbook
 
 EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
 UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
-FILTERED_FILES_FOLDER = os.path.join(UPLOAD_FOLDER, "Filtered_Files")  # Folder to store filtered files
+FILTERED_FILES_FOLDER = "C:\\Filtered Files"  # Folder to store filtered files
 
-# Ensure the folders exist
+# Ensure necessary folders exist
 if not os.path.exists(UPLOAD_FOLDER):
     print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
     exit()
@@ -100,16 +100,17 @@ for index, row in df_bal.iterrows():
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
             df_bal.at[index, "File Name is correct in export sheet"] = os.path.join(selected_folders[config_type], matching_file)
-
-            # Create a folder for the config type inside "Filtered_Files" if not exists
-            config_folder = os.path.join(FILTERED_FILES_FOLDER, config_type)
+            
+            # Ensure subfolder exists for storing files
+            config_folder = os.path.join(FILTERED_FILES_FOLDER, config_name)
             if not os.path.exists(config_folder):
                 os.makedirs(config_folder)
-
-            # Copy the matched file into the respective folder
+            
+            # Copy file to the corresponding subfolder
             src_path = os.path.join(selected_folders[config_type], matching_file)
             dest_path = os.path.join(config_folder, matching_file)
             shutil.copy2(src_path, dest_path)
+            print(f"✅ Saved: {matching_file} in {config_folder}")
         else:
             df_bal.at[index, "HRL Available?"] = "Not Found"
 
@@ -119,4 +120,4 @@ for row_idx, row in df_bal.iterrows():
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
 
 wb.save(EXCEL_FILE)
-print("✅ Excel file updated successfully! Matched files stored in 'Filtered_Files' folder.")
+print("✅ Excel file updated successfully!")
