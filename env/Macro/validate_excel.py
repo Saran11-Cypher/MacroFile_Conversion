@@ -70,20 +70,27 @@ df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to match config names with uploaded files
 def find_matching_file(config_name, folder_path):
-    """Finds files that strictly match the config name (ignoring case, special characters, and spacing)."""
-    # Normalize the config name: remove special characters, lowercase, and replace spaces/hyphens with a dot
+    """Finds files that match the config name after normalizing special characters, case, and spacing."""
+    # Normalize the config name: remove special characters, convert to lowercase
     normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
+
+    print(f"\n🔍 Checking for config name: '{config_name}' (Normalized: '{normalized_config_name}') in folder: {folder_path}")
 
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
             # Normalize filename: remove special characters and lowercase
             cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
 
-            # Check if the cleaned filename contains the cleaned config name
+            print(f"   📂 Comparing with file: '{filename}' (Normalized: '{cleaned_filename}')")
+
+            # Check if normalized config name exists within the normalized filename
             if normalized_config_name in cleaned_filename:
+                print(f"   ✅ Match found: {filename}")
                 return filename  # Return the first matched file
 
+    print("   ❌ No match found")
     return None  # No match found
+
 
 # Check for HRL availability and update DataFrame
 for index, row in df_bal.iterrows():
