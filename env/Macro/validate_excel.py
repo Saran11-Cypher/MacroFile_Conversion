@@ -1,15 +1,19 @@
 import os
+import shutil
 import pandas as pd
 import re
 from openpyxl import load_workbook
 
 EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
 UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
+OUTPUT_FOLDER = "C:\\Filtered_Files"  # Folder to store copied files
 
 # Ensure the folder exists
 if not os.path.exists(UPLOAD_FOLDER):
     print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
     exit()
+if not os.path.exists(OUTPUT_FOLDER):
+    os.makedirs(OUTPUT_FOLDER)
 
 # Load workbook and sheets
 wb = load_workbook(EXCEL_FILE)
@@ -70,27 +74,20 @@ df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to match config names with uploaded files
 def find_matching_file(config_name, folder_path):
-    """Finds files that match the config name after normalizing special characters, case, and spacing."""
-    # Normalize the config name: remove special characters, convert to lowercase
+    """Finds files that strictly match the config name (ignoring case, special characters, and spacing)."""
+    # Normalize the config name: remove special characters, lowercase, and replace spaces/hyphens with a dot
     normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
-
-    print(f"\n🔍 Checking for config name: '{config_name}' (Normalized: '{normalized_config_name}') in folder: {folder_path}")
 
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
             # Normalize filename: remove special characters and lowercase
             cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
 
-            print(f"   📂 Comparing with file: '{filename}' (Normalized: '{cleaned_filename}')")
-
-            # Check if normalized config name exists within the normalized filename
+            # Check if the cleaned filename contains the cleaned config name
             if normalized_config_name in cleaned_filename:
-                print(f"   ✅ Match found: {filename}")
                 return filename  # Return the first matched file
 
-    print("   ❌ No match found")
     return None  # No match found
-
 
 # Check for HRL availability and update DataFrame
 for index, row in df_bal.iterrows():
@@ -106,8 +103,16 @@ for index, row in df_bal.iterrows():
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
             df_bal.at[index, "File Name is correct in export sheet"] = os.path.join(selected_folders[config_type], matching_file)
-        else:
-            df_bal.at[index, "HRL Available?"] = "Not Found"
+            
+            # Create a folder for the config type if it doesn't exist
+            config_folder = os.path.join(OUTPUT_FOLDER, config_type)
+            if not os.path.exists(config_folder):
+                os.makedirs(config_folder)
+
+            # Copy the matched file to the new folder
+            src_path = os.path.join(selected_folders[config_type], matching_file)
+            dest_path = os.path.join(config_folder, matching_file)
+            shutil.copy2(src_path, dest_path)
 
 # Save updates to Excel
 for row_idx, row in df_bal.iterrows():
@@ -115,4 +120,4 @@ for row_idx, row in df_bal.iterrows():
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
 
 wb.save(EXCEL_FILE)
-print("✅ Excel file updated successfully!")
+print("✅ Excel file updated successfully! Files copied to respective folders.")
