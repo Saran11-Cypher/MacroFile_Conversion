@@ -5,10 +5,15 @@ from openpyxl import load_workbook
 
 EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
 UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
-FILTERED_FOLDER = "C:\\FilteredFiles"  # Folder where filtered files will be stored
+FILTERED_FILES_FOLDER = os.path.join(UPLOAD_FOLDER, "Filtered Files")  # Folder to store filtered files
 
-# Ensure required folders exist
-os.makedirs(FILTERED_FOLDER, exist_ok=True)
+# Ensure the folder exists
+if not os.path.exists(UPLOAD_FOLDER):
+    print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
+    exit()
+
+# Create the Filtered Files folder if it doesn't exist
+os.makedirs(FILTERED_FILES_FOLDER, exist_ok=True)
 
 # Load workbook and sheets
 wb = load_workbook(EXCEL_FILE)
@@ -70,20 +75,18 @@ df_bal.drop(columns=["Order"], inplace=True)
 def find_matching_file(config_name, folder_path):
     """Finds files that contain all words from the config_name in any order."""
     config_words = normalize_text(config_name).split()
-    
+
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
             cleaned_filename = normalize_text(filename)
 
-            # Ensure exact match of all words in config_name
-            if all(word in cleaned_filename.split() for word in config_words):
+            # Ensure all words in config_name exist in the filename
+            if all(word in cleaned_filename for word in config_words):
                 return filename  # Return the first matched file
 
     return None  # No match found
 
-# Create folders and copy filtered files
-filtered_files_count = 0
-
+# Check for HRL availability and update DataFrame
 for index, row in df_bal.iterrows():
     config_type = row["Config Type"]
     config_name = row["Config Name"]
@@ -96,20 +99,16 @@ for index, row in df_bal.iterrows():
 
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
-            df_bal.at[index, "File Name is correct in export sheet"] = os.path.join(selected_folders[config_type], matching_file)
+            file_path = os.path.join(selected_folders[config_type], matching_file)
+            df_bal.at[index, "File Name is correct in export sheet"] = file_path
 
-            # Create a folder for this config type under FILTERED_FOLDER
-            config_folder_path = os.path.join(FILTERED_FOLDER, config_type)
-            os.makedirs(config_folder_path, exist_ok=True)
+            # Create a subfolder for the config type if not exists
+            config_folder = os.path.join(FILTERED_FILES_FOLDER, config_type)
+            os.makedirs(config_folder, exist_ok=True)
 
-            # Copy file to the filtered folder
-            source_path = os.path.join(selected_folders[config_type], matching_file)
-            destination_path = os.path.join(config_folder_path, matching_file)
-
-            if not os.path.exists(destination_path):  # Avoid duplicate copies
-                with open(source_path, 'rb') as src, open(destination_path, 'wb') as dest:
-                    dest.write(src.read())
-                filtered_files_count += 1
+            # Copy the matched file to the filtered folder
+            destination_path = os.path.join(config_folder, matching_file)
+            os.replace(file_path, destination_path)  # Move file instead of copy
         else:
             df_bal.at[index, "HRL Available?"] = "HRL Not Found"
 
@@ -119,14 +118,4 @@ for row_idx, row in df_bal.iterrows():
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
 
 wb.save(EXCEL_FILE)
-
-# Debugging Output
-expected_files = len(df_bal[df_bal["HRL Available?"] == "HRL Found"])
-actual_files = sum(len(files) for _, _, files in os.walk(FILTERED_FOLDER))
-
-print(f"✅ Excel file updated successfully!")
-print(f"📌 Expected Filtered Files: {expected_files}")
-print(f"📂 Actual Files in Filtered Folder: {actual_files}")
-
-if expected_files != actual_files:
-    print("⚠️ Warning: The number of filtered files does not match the expected count! Check for duplicates or missing files.")
+print("✅ Excel file updated successfully! Filtered files have been stored.")
