@@ -60,7 +60,6 @@ df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(
 
 # Validate order: If not in increasing sequence, show error and exit
 valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
-
 if not valid_orders.is_monotonic_increasing:
     print("❌ Error: Invalid Order! Please arrange the data correctly.")
     exit()
