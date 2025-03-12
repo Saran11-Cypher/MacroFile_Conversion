@@ -107,4 +107,4 @@ for row_idx, row in df_bal.iterrows():
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
 
 wb.save(EXCEL_FILE)
-print("✅ Excel file updated successfully!")
+print("✅ Excel file updated successfully!...")
