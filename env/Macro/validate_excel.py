@@ -1,19 +1,19 @@
 import os
 import pandas as pd
 import re
-import shutil
 from openpyxl import load_workbook
 
 EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
 UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
-FILTERED_FILES_FOLDER = "C:\\Filtered Files"  # Folder to store filtered files
+FILTERED_FILES_FOLDER = os.path.join(UPLOAD_FOLDER, "Filtered Files")  # Folder to store filtered files
 
-# Ensure necessary folders exist
+# Ensure the folder exists
 if not os.path.exists(UPLOAD_FOLDER):
     print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
     exit()
-if not os.path.exists(FILTERED_FILES_FOLDER):
-    os.makedirs(FILTERED_FILES_FOLDER)
+
+# Create the Filtered Files folder if it doesn't exist
+os.makedirs(FILTERED_FILES_FOLDER, exist_ok=True)
 
 # Load workbook and sheets
 wb = load_workbook(EXCEL_FILE)
@@ -99,20 +99,18 @@ for index, row in df_bal.iterrows():
 
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
-            df_bal.at[index, "File Name is correct in export sheet"] = os.path.join(selected_folders[config_type], matching_file)
-            
-            # Ensure subfolder exists for storing files
-            config_folder = os.path.join(FILTERED_FILES_FOLDER, config_name)
-            if not os.path.exists(config_folder):
-                os.makedirs(config_folder)
-            
-            # Copy file to the corresponding subfolder
-            src_path = os.path.join(selected_folders[config_type], matching_file)
-            dest_path = os.path.join(config_folder, matching_file)
-            shutil.copy2(src_path, dest_path)
-            print(f"✅ Saved: {matching_file} in {config_folder}")
+            file_path = os.path.join(selected_folders[config_type], matching_file)
+            df_bal.at[index, "File Name is correct in export sheet"] = file_path
+
+            # Create a subfolder for the config type if not exists
+            config_folder = os.path.join(FILTERED_FILES_FOLDER, config_type)
+            os.makedirs(config_folder, exist_ok=True)
+
+            # Copy the matched file to the filtered folder
+            destination_path = os.path.join(config_folder, matching_file)
+            os.replace(file_path, destination_path)  # Move file instead of copy
         else:
-            df_bal.at[index, "HRL Available?"] = "Not Found"
+            df_bal.at[index, "HRL Available?"] = "HRL Not Found"
 
 # Save updates to Excel
 for row_idx, row in df_bal.iterrows():
@@ -120,4 +118,4 @@ for row_idx, row in df_bal.iterrows():
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
 
 wb.save(EXCEL_FILE)
-print("✅ Excel file updated successfully!")
+print("✅ Excel file updated successfully! Filtered files have been stored.")
