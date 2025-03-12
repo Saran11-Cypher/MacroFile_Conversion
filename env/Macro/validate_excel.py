@@ -121,3 +121,54 @@ for row_idx, row in df_bal.iterrows():
 
 wb.save(EXCEL_FILE)
 print("✅ Excel file updated successfully! Files copied to respective folders.")
+
+
+
+
+# Function to find all matching files
+def find_all_matching_files(config_name, folder_path):
+    """Finds all files that match the config name (ignoring case, special characters, and spacing)."""
+    normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
+    matching_files = []
+
+    for filename in os.listdir(folder_path):
+        if os.path.isfile(os.path.join(folder_path, filename)):
+            cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
+            if normalized_config_name in cleaned_filename:
+                matching_files.append(filename)
+
+    return matching_files  # Return all matched files
+
+# Check for HRL availability and update DataFrame
+for index, row in df_bal.iterrows():
+    config_type = row["Config Type"]
+    config_name = row["Config Name"]
+
+    if pd.isna(config_name) or not str(config_name).strip():
+        continue  # Skip empty config names
+
+    if config_type in selected_folders:
+        matching_files = find_all_matching_files(config_name, selected_folders[config_type])
+
+        if matching_files:
+            df_bal.at[index, "HRL Available?"] = "HRL Found"
+            df_bal.at[index, "File Name is correct in export sheet"] = "; ".join(
+                [os.path.join(selected_folders[config_type], f) for f in matching_files]
+            )
+
+            # Ensure config folder exists
+            config_folder = os.path.join(OUTPUT_FOLDER, config_type)
+            os.makedirs(config_folder, exist_ok=True)
+
+            # Copy all matching files
+            for matching_file in matching_files:
+                src_path = os.path.join(selected_folders[config_type], matching_file)
+                dest_path = os.path.join(config_folder, matching_file)
+
+                if os.path.exists(src_path):
+                    try:
+                        shutil.copy2(src_path, dest_path)
+                    except Exception as e:
+                        print(f"❌ Error copying file {matching_file}: {e}")
+                else:
+                    print(f"⚠️ Warning: File '{matching_file}' not found in '{selected_folders[config_type]}'")
