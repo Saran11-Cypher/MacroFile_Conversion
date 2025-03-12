@@ -66,4 +66,67 @@ if not valid_orders.is_monotonic_increasing:
 # Remove the temporary "Order" column (not needed in final output)
 df_bal.drop(columns=["Order"], inplace=True)
 
-# Function to match config names with upl
+# Function to match config names with uploaded files
+def find_matching_file(config_name, folder_path):
+    """Finds files that contain all words from the config_name in any order."""
+    config_words = normalize_text(config_name).split()
+    
+    for filename in os.listdir(folder_path):
+        if os.path.isfile(os.path.join(folder_path, filename)):
+            cleaned_filename = normalize_text(filename)
+
+            # Ensure exact match of all words in config_name
+            if all(word in cleaned_filename.split() for word in config_words):
+                return filename  # Return the first matched file
+
+    return None  # No match found
+
+# Create folders and copy filtered files
+filtered_files_count = 0
+
+for index, row in df_bal.iterrows():
+    config_type = row["Config Type"]
+    config_name = row["Config Name"]
+
+    if pd.isna(config_name) or not str(config_name).strip():
+        continue  # Skip empty config names
+
+    if config_type in selected_folders:
+        matching_file = find_matching_file(config_name, selected_folders[config_type])
+
+        if matching_file:
+            df_bal.at[index, "HRL Available?"] = "HRL Found"
+            df_bal.at[index, "File Name is correct in export sheet"] = os.path.join(selected_folders[config_type], matching_file)
+
+            # Create a folder for this config type under FILTERED_FOLDER
+            config_folder_path = os.path.join(FILTERED_FOLDER, config_type)
+            os.makedirs(config_folder_path, exist_ok=True)
+
+            # Copy file to the filtered folder
+            source_path = os.path.join(selected_folders[config_type], matching_file)
+            destination_path = os.path.join(config_folder_path, matching_file)
+
+            if not os.path.exists(destination_path):  # Avoid duplicate copies
+                with open(source_path, 'rb') as src, open(destination_path, 'wb') as dest:
+                    dest.write(src.read())
+                filtered_files_count += 1
+        else:
+            df_bal.at[index, "HRL Available?"] = "HRL Not Found"
+
+# Save updates to Excel
+for row_idx, row in df_bal.iterrows():
+    for col_idx, value in enumerate(row):
+        ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
+
+wb.save(EXCEL_FILE)
+
+# Debugging Output
+expected_files = len(df_bal[df_bal["HRL Available?"] == "HRL Found"])
+actual_files = sum(len(files) for _, _, files in os.walk(FILTERED_FOLDER))
+
+print(f"✅ Excel file updated successfully!")
+print(f"📌 Expected Filtered Files: {expected_files}")
+print(f"📂 Actual Files in Filtered Folder: {actual_files}")
+
+if expected_files != actual_files:
+    print("⚠️ Warning: The number of filtered files does not match the expected count! Check for duplicates or missing files.")
