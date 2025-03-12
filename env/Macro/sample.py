@@ -60,6 +60,7 @@ df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(
 
 # Validate order: If not in increasing sequence, show error and exit
 valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
+
 if not valid_orders.is_monotonic_increasing:
     print("❌ Error: Invalid Order! Please arrange the data correctly.")
     exit()
@@ -69,19 +70,20 @@ df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to match config names with uploaded files
 def find_matching_file(config_name, folder_path):
-    """Finds files that contain all words from the config_name in any order."""
-    config_words = normalize_text(config_name).split()
+    """Finds files that strictly match the config name (ignoring case, special characters, and spacing)."""
+    # Normalize the config name: remove special characters, lowercase, and replace spaces/hyphens with a dot
+    normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
 
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
-            cleaned_filename = normalize_text(filename)
+            # Normalize filename: remove special characters and lowercase
+            cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
 
-            # Ensure all words in config_name exist in the filename
-            if all(word in cleaned_filename for word in config_words):
+            # Check if the cleaned filename contains the cleaned config name
+            if normalized_config_name in cleaned_filename:
                 return filename  # Return the first matched file
 
     return None  # No match found
-
 # Check for HRL availability and update DataFrame
 for index, row in df_bal.iterrows():
     config_type = row["Config Type"]
