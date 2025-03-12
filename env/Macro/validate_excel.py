@@ -3,13 +3,12 @@ import pandas as pd
 import re
 from openpyxl import load_workbook
 
-# Define paths
-EXCEL_FILE = "E:\\PYTHON\\Django\\Workspace\\Macro_Generator\\env\\Macro_Functional_Excel.xlsx"  # Update this path
-UPLOAD_FOLDER = "E:\\PYTHON\\ServiceCategory"  # Parent folder containing config subfolders
+EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
+UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
 
 # Ensure the folder exists
 if not os.path.exists(UPLOAD_FOLDER):
-    print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
+    print(f"\u274c Error: Folder '{UPLOAD_FOLDER}' does not exist.")
     exit()
 
 # Load workbook and sheets
@@ -28,7 +27,7 @@ config_load_order = [
 # Function to normalize and clean text
 def normalize_text(text):
     """Removes special characters, converts to lowercase, and standardizes spaces/hyphens."""
-    return re.sub(r'[^a-zA-Z0-9\s-]', '', str(text)).strip().lower()
+    return re.sub(r'[^a-zA-Z0-9]', '', str(text)).strip().lower()
 
 # Load "Business Approved List" into a DataFrame
 df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)  # Ensure all columns are strings
@@ -45,7 +44,7 @@ available_folders = {normalize_text(f): os.path.join(UPLOAD_FOLDER, f)
 selected_folders = {config: path for config, path in available_folders.items() if config in approved_config_types}
 
 if not selected_folders:
-    print("❌ Error: No matching config folders found inside the parent folder.")
+    print("\u274c Error: No matching config folders found inside the parent folder.")
     exit()
 
 # Process each selected folder
@@ -61,9 +60,8 @@ df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(
 
 # Validate order: If not in increasing sequence, show error and exit
 valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
-
 if not valid_orders.is_monotonic_increasing:
-    print("❌ Error: Invalid Order! Please arrange the data correctly.")
+    print("\u274c Error: Invalid Order! Please arrange the data correctly.")
     exit()
 
 # Remove the temporary "Order" column (not needed in final output)
@@ -71,17 +69,38 @@ df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to match config names with uploaded files
 def find_matching_file(config_name, folder_path):
-    """Finds files that contain all words from the config_name in any order."""
-    config_words = normalize_text(config_name).split()
+    """Finds the best-matching file in the folder based on config name."""
+    
+    # Normalize the config name (remove special characters, lowercase)
+    normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
+    
+    print(f"\n\ud83d\udd0d Checking Config Name: {config_name} | Normalized: {normalized_config_name}")
+
+    best_match = None
 
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
-            cleaned_filename = normalize_text(filename)
+            
+            # Normalize the file name
+            normalized_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
 
-            # Ensure all words in config_name exist in the filename
-            if all(word in cleaned_filename for word in config_words):
-                return filename  # Return the first matched file
+            print(f"  \ud83d\udcc2 Checking File: {filename} | Normalized: {normalized_filename}")
 
+            # Check if the normalized names are exactly the same
+            if normalized_filename == normalized_config_name:
+                print(f"  ✅ Perfect Match Found: {filename}")
+                return filename  # Return exact match immediately
+
+            # If not exact but contains the name, consider it as a match
+            if normalized_config_name in normalized_filename:
+                print(f"  🔹 Partial Match Found: {filename}")
+                best_match = filename
+
+    if best_match:
+        print(f"  🔹 Using Partial Match: {best_match}")
+        return best_match
+    
+    print("  ❌ No Match Found")
     return None  # No match found
 
 # Check for HRL availability and update DataFrame
