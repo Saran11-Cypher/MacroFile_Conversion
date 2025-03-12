@@ -1,15 +1,19 @@
 import os
+import shutil
 import pandas as pd
 import re
 from openpyxl import load_workbook
 
 EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
 UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
+FILTERED_FILES_FOLDER = os.path.join(UPLOAD_FOLDER, "Filtered_Files")  # Folder to store filtered files
 
-# Ensure the folder exists
+# Ensure the folders exist
 if not os.path.exists(UPLOAD_FOLDER):
     print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
     exit()
+if not os.path.exists(FILTERED_FILES_FOLDER):
+    os.makedirs(FILTERED_FILES_FOLDER)
 
 # Load workbook and sheets
 wb = load_workbook(EXCEL_FILE)
@@ -59,12 +63,13 @@ for config_type, folder_path in selected_folders.items():
 df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(x) if x in config_load_order else -1)
 
 # Validate order: If not in increasing sequence, show error and exit
-valid_orders = df_bal[df_bal["Order"] >= 0]["Order"].tolist()  # Convert to list
-
-# Force order checking
-if valid_orders != sorted(valid_orders):
-    print("❌ Error: Invalid Order! Please arrange the data correctly and retry.")
+valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
+if not valid_orders.is_monotonic_increasing:
+    print("❌ Error: Invalid Order! Please arrange the data correctly.")
     exit()
+
+# Remove the temporary "Order" column (not needed in final output)
+df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to match config names with uploaded files
 def find_matching_file(config_name, folder_path):
@@ -95,14 +100,23 @@ for index, row in df_bal.iterrows():
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
             df_bal.at[index, "File Name is correct in export sheet"] = os.path.join(selected_folders[config_type], matching_file)
+
+            # Create a folder for the config type inside "Filtered_Files" if not exists
+            config_folder = os.path.join(FILTERED_FILES_FOLDER, config_type)
+            if not os.path.exists(config_folder):
+                os.makedirs(config_folder)
+
+            # Copy the matched file into the respective folder
+            src_path = os.path.join(selected_folders[config_type], matching_file)
+            dest_path = os.path.join(config_folder, matching_file)
+            shutil.copy2(src_path, dest_path)
         else:
             df_bal.at[index, "HRL Available?"] = "Not Found"
 
-# ✅ Ensure DataFrame updates reflect in Excel
-for row_idx, (_, row) in enumerate(df_bal.iterrows(), start=2):  # Start from 2 to skip headers
-    for col_idx, value in enumerate(row, start=1):  # Start from column 1
-        ws_bal.cell(row=row_idx, column=col_idx, value=str(value))  # Ensure saving as string
-
 # Save updates to Excel
+for row_idx, row in df_bal.iterrows():
+    for col_idx, value in enumerate(row):
+        ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
+
 wb.save(EXCEL_FILE)
-print("✅ Excel file updated successfully!")
+print("✅ Excel file updated successfully! Matched files stored in 'Filtered_Files' folder.")
