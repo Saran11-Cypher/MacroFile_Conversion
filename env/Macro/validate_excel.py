@@ -1,15 +1,15 @@
 import os
 import pandas as pd
 import re
+import shutil
 from openpyxl import load_workbook
 
-EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
-UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
+EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"
+UPLOAD_FOLDER = "C:\\1"
+PROCESSED_HRL_FOLDER = "C:\\Processed_HRL_Files"  # Parent folder for HRL storage
 
-# Ensure the folder exists
-if not os.path.exists(UPLOAD_FOLDER):
-    print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
-    exit()
+# Ensure necessary folders exist
+os.makedirs(PROCESSED_HRL_FOLDER, exist_ok=True)
 
 # Load workbook and sheets
 wb = load_workbook(EXCEL_FILE)
@@ -26,11 +26,11 @@ config_load_order = [
 
 # Function to normalize and clean text
 def normalize_text(text):
-    """Removes special characters, converts to lowercase, and standardizes spaces/hyphens."""
-    return re.sub(r'[^a-zA-Z0-9\s-]', '', str(text)).strip().lower()
+    """Keeps spaces and hyphens while removing special characters."""
+    return re.sub(r'[^a-zA-Z0-9\s\-]', '', str(text)).strip().lower()
 
 # Load "Business Approved List" into a DataFrame
-df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)  # Ensure all columns are strings
+df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
 df_bal["Config Type"] = df_bal["Config Type"].astype(str).apply(normalize_text)
 
 # Get the config types mentioned in "Business Approved List"
@@ -70,21 +70,19 @@ df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to match config names with uploaded files
 def find_matching_file(config_name, folder_path):
-    """Finds files that strictly match the config name (ignoring case, special characters, and spacing)."""
-    # Normalize the config name: remove special characters, lowercase, and replace spaces/hyphens with a dot
-    normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
+    """Finds files that match the config name, keeping spaces and hyphens."""
+    normalized_config_name = normalize_text(config_name)  # Normalize config name
 
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
-            # Normalize filename: remove special characters and lowercase
-            cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
+            cleaned_filename = normalize_text(filename)  # Normalize filename
 
-            # Check if the cleaned filename contains the cleaned config name
             if normalized_config_name in cleaned_filename:
                 return filename  # Return the first matched file
 
     return None  # No match found
-# Check for HRL availability and update DataFrame
+
+# Check for HRL availability, update DataFrame, and store files
 for index, row in df_bal.iterrows():
     config_type = row["Config Type"]
     config_name = row["Config Name"]
@@ -93,11 +91,22 @@ for index, row in df_bal.iterrows():
         continue  # Skip empty config names
 
     if config_type in selected_folders:
-        matching_file = find_matching_file(config_name, selected_folders[config_type])
+        folder_path = selected_folders[config_type]
+        matching_file = find_matching_file(config_name, folder_path)
 
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
-            df_bal.at[index, "File Name is correct in export sheet"] = os.path.join(selected_folders[config_type], matching_file)
+            df_bal.at[index, "File Name is correct in export sheet"] = os.path.join(folder_path, matching_file)
+
+            # Store HRL file in processed folder
+            processed_folder_path = os.path.join(PROCESSED_HRL_FOLDER, config_type)
+            os.makedirs(processed_folder_path, exist_ok=True)  # Create config folder if it doesn't exist
+
+            src_path = os.path.join(folder_path, matching_file)
+            dest_path = os.path.join(processed_folder_path, matching_file)
+
+            shutil.copy(src_path, dest_path)  # Copy HRL file
+            print(f"✅ Stored HRL file: {matching_file} in {processed_folder_path}")
         else:
             df_bal.at[index, "HRL Available?"] = "Not Found"
 
@@ -107,9 +116,4 @@ for row_idx, row in df_bal.iterrows():
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
 
 wb.save(EXCEL_FILE)
-print("✅ Excel file updated successfully!...")
-
-Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)
-Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance) Office (Copay Deductible Waived)
-Medical Services - Medicare (Alternate Office & Clinic Definition) - OON (Coinsurance) Office (Copay Deductible Waived)
-
+print("✅ Excel file updated successfully!")
