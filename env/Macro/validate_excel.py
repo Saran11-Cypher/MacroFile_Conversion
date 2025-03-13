@@ -138,4 +138,53 @@ for index, row in df_bal.iterrows():
         print(f"❌ Error moving {file_path} to {dest_folder}: {e}")
 
 print("✅ All HRL files have been stored in their respective folders.")
-Original: BenefitPlanComponent.MedicalServices-Medicare_AlternateOffice_and_ClinicDefinition_-OON_Coinsurance_Office_CopayDeductibleWaived.1800-01-01.a.hrl, Cleaned:benefitplancomponentmedicalservicesmedicarealternateofficeandclinicdefinitionooncoinsuranceofficecopaydeductiblewaived18000101ahrl
+
+
+
+
+
+
+
+Config Type	Config Name	HRL Available?	File Name is correct in export sheet	Exported	Imported
+benefitplancomponent	Medical Services - Medicare - INN (Coinsurance) PCP (Benefit Specific Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_Coinsurance_PCP_BenefitSpecificCoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - INN (Coinsurance) PCP (Benefit Specific Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_Coinsurance_PCP_BenefitSpecificCoinsurance.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - INN (Coinsurance) PCP (Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_Coinsurance_PCP_CoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - INN (Coinsurance) PCP (Copay)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_Coinsurance_PCP_Copay.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - INN (Copay Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_CopayDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - INN (Copay)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_Copay.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Benefit Specific Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_BenefitSpecificCoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Benefit Specific Coinsurance Deductible Waived) PCP (Copay Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_BenefitSpecificCoinsuranceDeductibleWaived_PCP_CopayDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Benefit Specific Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_BenefitSpecificCoinsurance.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Benefit Specific Coinsurance) PCP (Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_BenefitSpecificCoinsurance_PCP_Coinsurance.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_CoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Coinsurance Deductible Waived) PCP (Benefit Specific Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_CoinsuranceDeductibleWaived_PCP_BenefitSpecificCoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Coinsurance Deductible Waived) PCP (Copay Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_CoinsuranceDeductibleWaived_PCP_CopayDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Coinsurance.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Coinsurance) PCP (Benefit Specific Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Coinsurance_PCP_BenefitSpecificCoinsurance.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Coinsurance) PCP (Copay)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Coinsurance_PCP_Copay.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Copay Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_CopayDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Copay Deductible Waived) PCP (Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_CopayDeductibleWaived_PCP_CoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Copay)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Copay.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Copay) PCP (Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Copay_PCP_Coinsurance.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare - OON (Copay) PCP (Not Covered)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Copay_PCP_NotCovered.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)	Not Found	nan	nan	nan
+benefitplancomponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance) Office (Copay Deductible Waived)	Not Found	nan	nan	nan
+benefitplancomponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - OON (Coinsurance) Office (Copay Deductible Waived)	Not Found	nan	nan	nan
+benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Benefit Specific Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_BenefitSpecificCoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Benefit Specific Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_BenefitSpecificCoinsurance.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_CoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_Coinsurance.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Copay Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_CopayDeductibleWaived.1800-01-01.a.hrl	nan	nan
+benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Copay)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_Copay.1800-01-01.a.hrl	nan	nan
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+
