@@ -117,3 +117,16 @@ for row_idx, row in df_bal.iterrows():
 
 wb.save(EXCEL_FILE)
 print("✅ Excel file updated successfully!")
+
+
+
+benefitplancomponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)	Not Found
+benefitplancomponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance) Office (Copay Deductible Waived)	Not Found
+benefitplancomponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - OON (Coinsurance) Office (Copay Deductible Waived)	Not Found
+
+
+BenefitPlanComponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)	HRL Found				C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare_AlternateOffice_and_ClinicDefinition_-INN_CoinsuranceDeductibleWaived_Office_CopayDeductibleWaived.1800-01-01.a.hrl
+BenefitPlanComponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance) Office (Copay Deductible Waived)	HRL Found				C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare_AlternateOffice_and_ClinicDefinition_-INN_Coinsurance_Office_CopayDeductibleWaived.1800-01-01.a.hrl
+BenefitPlanComponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - OON (Coinsurance) Office (Copay Deductible Waived)	HRL Found				C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare_AlternateOffice_and_ClinicDefinition_-OON_Coinsurance_Office_CopayDeductibleWaived.1800-01-01.a.hrl
+
+
