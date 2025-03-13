@@ -1,12 +1,10 @@
 import os
-import shutil
 import pandas as pd
 import re
 from openpyxl import load_workbook
 
 EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
 UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
-STORAGE_FOLDER = "C:\\New folder"  # Change this to the folder where you want to store HRL files
 
 # Ensure the folder exists
 if not os.path.exists(UPLOAD_FOLDER):
@@ -86,7 +84,6 @@ def find_matching_file(config_name, folder_path):
                 return filename  # Return the first matched file
 
     return None  # No match found
-
 # Check for HRL availability and update DataFrame
 for index, row in df_bal.iterrows():
     config_type = row["Config Type"]
@@ -110,81 +107,4 @@ for row_idx, row in df_bal.iterrows():
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
 
 wb.save(EXCEL_FILE)
-print("✅ Excel file updated successfully!")
-
-# -----------------------------
-# Store HRL files in respective folders
-# -----------------------------
-
-for index, row in df_bal.iterrows():
-    config_type = row["Config Type"]
-    file_path = row["File Name is correct in export sheet"]
-
-    if pd.isna(file_path) or not str(file_path).strip() or row["HRL Available?"] != "HRL Found":
-        continue  # Skip rows where HRL is not found
-
-    # Define destination folder
-    dest_folder = os.path.join(STORAGE_FOLDER, config_type.replace(" ", ""))  # Removing spaces to match folder name format
-
-    # Create folder if it doesn't exist
-    if not os.path.exists(dest_folder):
-        os.makedirs(dest_folder)
-
-    # Move the HRL file to the respective config folder
-    try:
-        shutil.move(file_path, os.path.join(dest_folder, os.path.basename(file_path)))
-        print(f"✅ Moved {file_path} to {dest_folder}")
-    except Exception as e:
-        print(f"❌ Error moving {file_path} to {dest_folder}: {e}")
-
-print("✅ All HRL files have been stored in their respective folders.")
-
-
-
-
-
-
-
-Config Type	Config Name	HRL Available?	File Name is correct in export sheet	Exported	Imported
-benefitplancomponent	Medical Services - Medicare - INN (Coinsurance) PCP (Benefit Specific Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_Coinsurance_PCP_BenefitSpecificCoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - INN (Coinsurance) PCP (Benefit Specific Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_Coinsurance_PCP_BenefitSpecificCoinsurance.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - INN (Coinsurance) PCP (Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_Coinsurance_PCP_CoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - INN (Coinsurance) PCP (Copay)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_Coinsurance_PCP_Copay.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - INN (Copay Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_CopayDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - INN (Copay)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-INN_Copay.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Benefit Specific Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_BenefitSpecificCoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Benefit Specific Coinsurance Deductible Waived) PCP (Copay Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_BenefitSpecificCoinsuranceDeductibleWaived_PCP_CopayDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Benefit Specific Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_BenefitSpecificCoinsurance.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Benefit Specific Coinsurance) PCP (Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_BenefitSpecificCoinsurance_PCP_Coinsurance.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_CoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Coinsurance Deductible Waived) PCP (Benefit Specific Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_CoinsuranceDeductibleWaived_PCP_BenefitSpecificCoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Coinsurance Deductible Waived) PCP (Copay Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_CoinsuranceDeductibleWaived_PCP_CopayDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Coinsurance.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Coinsurance) PCP (Benefit Specific Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Coinsurance_PCP_BenefitSpecificCoinsurance.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Coinsurance) PCP (Copay)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Coinsurance_PCP_Copay.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Copay Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_CopayDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Copay Deductible Waived) PCP (Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_CopayDeductibleWaived_PCP_CoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Copay)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Copay.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Copay) PCP (Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Copay_PCP_Coinsurance.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare - OON (Copay) PCP (Not Covered)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare-OON_Copay_PCP_NotCovered.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)	Not Found	nan	nan	nan
-benefitplancomponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance) Office (Copay Deductible Waived)	Not Found	nan	nan	nan
-benefitplancomponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - OON (Coinsurance) Office (Copay Deductible Waived)	Not Found	nan	nan	nan
-benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Benefit Specific Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_BenefitSpecificCoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Benefit Specific Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_BenefitSpecificCoinsurance.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Coinsurance Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_CoinsuranceDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Coinsurance)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_Coinsurance.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Copay Deductible Waived)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_CopayDeductibleWaived.1800-01-01.a.hrl	nan	nan
-benefitplancomponent	Medical Supplies - Compression Garments - Medicare Covered - INN (Copay)	HRL Found	C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_Copay.1800-01-01.a.hrl	nan	nan
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-
+print("✅ Excel file updated successfully!...")
