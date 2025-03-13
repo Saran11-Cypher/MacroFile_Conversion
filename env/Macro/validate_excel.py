@@ -130,3 +130,26 @@ BenefitPlanComponent	Medical Services - Medicare (Alternate Office & Clinic Defi
 BenefitPlanComponent	Medical Services - Medicare (Alternate Office & Clinic Definition) - OON (Coinsurance) Office (Copay Deductible Waived)	HRL Found				C:\1\BenefitPlanComponent\BenefitPlanComponent.MedicalServices-Medicare_AlternateOffice_and_ClinicDefinition_-OON_Coinsurance_Office_CopayDeductibleWaived.1800-01-01.a.hrl
 
 
+def normalize_filename(text):
+    """Normalize filenames by replacing special characters consistently."""
+    text = str(text).strip().lower()
+    text = re.sub(r'[\s\(\)-]+', '_', text)  # Replace spaces, dashes, and parentheses with underscores
+    text = re.sub(r'[^a-zA-Z0-9_]', '', text)  # Remove all other special characters except underscores
+    return text
+
+
+def find_matching_file(config_name, folder_path):
+    """Finds files that strictly match the config name (ignoring case, special characters, and spacing)."""
+    normalized_config_name = normalize_filename(config_name)
+
+    for filename in os.listdir(folder_path):
+        if os.path.isfile(os.path.join(folder_path, filename)):
+            cleaned_filename = normalize_filename(filename)
+
+            # Check if cleaned filename contains cleaned config name
+            if normalized_config_name in cleaned_filename:
+                return filename  # Return first matched file
+
+    return None  # No match found
+
+
