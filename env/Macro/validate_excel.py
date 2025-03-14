@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import re
 from openpyxl import load_workbook
+from thefuzz import fuzz, process  # Using fuzz for exact match
 
 EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"
 UPLOAD_FOLDER = "C:\\1"
@@ -22,7 +23,7 @@ config_load_order = [
 ]
 
 def normalize_text(text):
-    """Removes special characters, converts to lowercase, and standardizes spaces."""
+    """Removes special characters, spaces, and converts to lowercase."""
     return re.sub(r'[^a-zA-Z0-9]', '', str(text)).strip().lower()
 
 df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
@@ -54,14 +55,23 @@ if not valid_orders.is_monotonic_increasing:
 
 df_bal.drop(columns=["Order"], inplace=True)
 
-def find_exact_matching_file(config_name, folder_path):
-    """Finds an exact match for a config name in the folder."""
+def find_exact_match(config_name, folder_path):
+    """Finds an exact match by normalizing both config names and file names using `thefuzz`."""
     normalized_config_name = normalize_text(config_name)
+    
+    file_list = [file for file in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, file))]
+    
+    if not file_list:
+        return None
 
-    for file in os.listdir(folder_path):
-        if os.path.isfile(os.path.join(folder_path, file)):
-            if normalize_text(file) == normalized_config_name:
-                return file  
+    normalized_files = {normalize_text(file): file for file in file_list}
+    
+    best_match, score = process.extractOne(normalized_config_name, normalized_files.keys(), scorer=fuzz.ratio)
+
+    # Only accept if the match score is 100% (exact normalized match)
+    if score == 100:
+        return normalized_files[best_match]  
+    
     return None  
 
 for index, row in df_bal.iterrows():
@@ -72,7 +82,7 @@ for index, row in df_bal.iterrows():
         continue  
 
     if config_type in selected_folders:
-        matching_file = find_exact_matching_file(config_name, selected_folders[config_type])
+        matching_file = find_exact_match(config_name, selected_folders[config_type])
 
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
@@ -85,4 +95,4 @@ for row_idx, row in df_bal.iterrows():
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  
 
 wb.save(EXCEL_FILE)
-print("✅ Excel file updated successfully with exact matching!")
+print("✅ Excel file updated successfully with **strict exact match** using `thefuzz`!")
