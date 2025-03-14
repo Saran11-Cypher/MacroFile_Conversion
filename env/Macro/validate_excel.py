@@ -68,14 +68,25 @@ df_bal.drop(columns=["Order"], inplace=True)  # Remove temp column
 
 # Function to match config names with uploaded files
 def find_matching_file(config_name, folder_path):
-    """Finds exact file match based on cleaned config name."""
-    normalized_config_name = normalize_text(config_name)
-    
-    # Create a dictionary of normalized filenames
-    file_dict = {normalize_text(file): file for file in os.listdir(folder_path) 
-                 if os.path.isfile(os.path.join(folder_path, file))}
+    """Strictly matches filenames against the config name and logs mismatches."""
+    normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
+    matched_files = []
 
-    return file_dict.get(normalized_config_name, None)
+    for filename in os.listdir(folder_path):
+        if os.path.isfile(os.path.join(folder_path, filename)):
+            cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
+
+            # Exact match check
+            if normalized_config_name in cleaned_filename:
+                matched_files.append(filename)
+
+    if matched_files:
+        print(f"✅ Matched: {config_name} → {matched_files[0]}")
+        return matched_files[0]  # Return the first matched file
+    else:
+        print(f"❌ No match for: {config_name} in {folder_path}")
+        return None
+
 
 # Match HRL files
 for index, row in df_bal.iterrows():
