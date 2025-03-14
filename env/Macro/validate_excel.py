@@ -112,3 +112,24 @@ for row_idx, row in df_bal.iterrows():
 
 wb.save(EXCEL_FILE)
 print("✅ Excel file updated successfully!")
+
+
+
+
+✅ Matched: Medical Supplies - Compression Garments - Medicare Covered - INN (Benefit Specific Coinsurance) → BenefitPlanComponent.MedicalSupplies-CompressionGarments-MedicareCovered-INN_CoinsuranceDeductibleWaived.1800-01-01.a.hrl
+nts-MedicareCovered-INN_BenefitSpecificCoinsurance.1800-01-01.a.hrl
+s-CompressionGarments-MedicareCovered-INN_BenefitSpecificCoinsuranceDeductibleWaived.1800-01-01.a.hrl
+✅ Matched: Medical Supplies - Compression Garments - Medicare Covered - INN (Benefit Specific Coinsurance) → BenefitPlanComponent.MedicalSupplies-CompressionGarms-CompressionGarments-MedicareCovered-INN_BenefitSpecificCoinsuranceDeductibleWaived.1800-01-01.a.hrl
+✅ Matched: Medical Supplies - Compression Garments - Medicare Covered - INN (Benefit Specific Coinsurance) → BenefitPlanComponent.MedicalSupplies-CompressionGarme  Matched: Medical Supplies - Compression Garments - Medicare Covered - INN (Coinsurance Deductible Waived) → BenefitPlanComponent.MedicalSupplies-CompressionGarnts-MedicareCovered-INN_BenefitSpecificCoinsurance.1800-01-01.a.hrl
+s-CompressionGarments-MedicareCovered-INN_BenefitSpecificCoinsuranceDeductibleWaived.1800-01-01.a.hrl
+✅ Matched: Medical Supplies - Compression Garments - Medicare Covered - INN (Benefit Specific Coinsurance) → BenefitPlanComponent.MedicalSupplies-CompressionGarm
+
+
+
+
+BenefitPlanComponent
+❌ No match for: Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance) Office (Copay Deductible Waived) in C:\1\BenefitPlanCompone
+nt
+❌ No match for: Medical Services - Medicare (Alternate Office & Clinic Definition) - OON (Coinsurance) Office (Copay Deductible Waived) in C:\1\BenefitPlanCompone
+nt
+✅ Matched: Medical Supplies - Compression Garments - Medicare Covered - INN (Benefit Specific Coinsurance Deductible Waived) → BenefitPlanComponent.MedicalSupplie
