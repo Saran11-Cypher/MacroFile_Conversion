@@ -27,10 +27,12 @@ config_load_order = [
 # Function to normalize and clean text
 def normalize_text(text):
     """Removes special characters, converts to lowercase, and standardizes spaces/hyphens."""
-    return re.sub(r'[_-]+', '-', re.sub(r'[^a-zA-Z0-9_-]', '', str(text))).strip().lower()
+    cleaned_text = re.sub(r'[^a-zA-Z0-9\s_-]', '', str(text)).strip().lower()
+    cleaned_text = re.sub(r'[_\-]+', '-', cleaned_text)  # Convert multiple underscores and hyphens into single hyphens
+    return cleaned_text
 
 # Load "Business Approved List" into a DataFrame
-df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
+df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)  # Ensure all columns are strings
 df_bal["Config Type"] = df_bal["Config Type"].astype(str).apply(normalize_text)
 
 # Get the config types mentioned in "Business Approved List"
@@ -51,6 +53,8 @@ if not selected_folders:
 for config_type, folder_path in selected_folders.items():
     uploaded_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
     file_count = len(uploaded_files)
+
+    # Update the "Main" sheet dynamically
     ws_main.append([config_type, file_count, "Pending", "Pending", "Pending"])
 
 # Assign order dynamically based on available configurations only
@@ -69,11 +73,15 @@ df_bal.drop(columns=["Order"], inplace=True)
 # Function to match config names with uploaded files
 def find_matching_file(config_name, folder_path):
     """Finds files that strictly match the config name (ignoring case, special characters, and spacing)."""
+    # Normalize the config name: remove special characters, lowercase, and replace spaces/hyphens with a dot
     normalized_config_name = normalize_text(config_name)
 
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
+            # Normalize filename: remove special characters and lowercase
             cleaned_filename = normalize_text(filename)
+
+            # Check if the cleaned filename contains the cleaned config name
             if normalized_config_name in cleaned_filename:
                 return filename  # Return the first matched file
 
@@ -89,7 +97,7 @@ for index, row in df_bal.iterrows():
 
     if config_type in selected_folders:
         matching_file = find_matching_file(config_name, selected_folders[config_type])
-        
+
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
             df_bal.at[index, "File Name is correct in export sheet"] = os.path.join(selected_folders[config_type], matching_file)
@@ -99,7 +107,7 @@ for index, row in df_bal.iterrows():
 # Save updates to Excel
 for row_idx, row in df_bal.iterrows():
     for col_idx, value in enumerate(row):
-        ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))
+        ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
 
 wb.save(EXCEL_FILE)
 print("✅ Excel file updated successfully!...")
