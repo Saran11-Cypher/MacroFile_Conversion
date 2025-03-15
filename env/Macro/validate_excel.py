@@ -21,14 +21,19 @@ config_load_order = [
 
 # Function to normalize text dynamically
 def normalize_text(text):
-    """Dynamically normalize file names without hardcoding specific patterns."""
-    text = text.lower().strip()
+    """Normalize text dynamically while preserving correct patterns."""
+    text = str(text).strip().lower()  # Ensure string format and lowercase
+
+    # Keep alphanumeric, spaces, and hyphens, removing all other characters
+    text = re.sub(r'[^a-zA-Z0-9\s-]', '', text)  
+
+    # Handle cases like `-_INN` → `-INN` while keeping other structures intact
+    text = re.sub(r'_-([a-zA-Z0-9]+)', r'-\1', text)  
+
+    # Normalize multiple spaces and dashes
     text = re.sub(r'\s+', '_', text)  # Convert spaces to underscores
     text = re.sub(r'[-]+', '-', text)  # Normalize multiple dashes
     text = re.sub(r'[_]+', '_', text)  # Normalize multiple underscores
-
-    # Dynamically fix `-_INN` cases without hardcoding
-    text = re.sub(r'_-([a-zA-Z0-9]+)', r'-\1', text)  # Converts `-_INN` to `-INN`
 
     return text
 
