@@ -90,7 +90,7 @@ for index, row in df_bal.iterrows():
             target_path = os.path.join(target_folder, matching_file)
             
             shutil.copy2(source_path, target_path)  # Copy HRL file to the new parent folder
-            df_bal.at[index, "File Name is correct in export sheet"] = target_path
+            df_bal.at[index, "File Name is correct in export sheet"] = source_path  # Keep original path
         else:
             df_bal.at[index, "HRL Available?"] = "Not Found"
 
