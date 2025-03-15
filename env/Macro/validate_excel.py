@@ -131,7 +131,8 @@ print("✅ Excel file updated successfully!...")
 
 print("Config Name:", normalize_text("Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)"))
 print("File Name:", normalize_text("BenefitPlanComponent.MedicalServices-Medicare_AlternateOffice_and_ClinicDefinition_-INN_CoinsuranceDeductibleWaived_Office_CopayDeductibleWaived.1800-01-01.a.hrl"))
-
+Config Name: medicalservicesmedicarealternateofficeclinicdefinitioninncoinsurancedeductiblewaivedofficecopaydeductiblewaived
+File Name: benefitplancomponentmedicalservicesmedicarealternateofficeandclinicdefinitioninncoinsurancedeductiblewaivedofficecopaydeductiblewaived18000101ahrl
 
 Searching for config: Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)ng 
 Normalized Name: medicalservicesmedicarealternateofficeclinicdefinitioninncoinsurancedeductiblewaivedofficecopaydeductiblewaived
