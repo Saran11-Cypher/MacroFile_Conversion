@@ -2,11 +2,13 @@ import os
 import pandas as pd
 import re
 import shutil
+from datetime import datetime
 from openpyxl import load_workbook
 
 EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"
 UPLOAD_FOLDER = "C:\\1"
-HRL_PARENT_FOLDER = "C:\\HRL_Collected"  # New parent folder for collected HRL files
+DATE_STAMP = datetime.now().strftime("%Y%m%d_%H%M%S")  # New parent folder with date and time stamp
+HRL_PARENT_FOLDER = f"C:\\Datas\\HRLS_{DATE_STAMP}"  # Updated parent folder structure
 
 if not os.path.exists(UPLOAD_FOLDER):
     print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
@@ -97,4 +99,4 @@ for row_idx, row in df_bal.iterrows():
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))
 
 wb.save(EXCEL_FILE)
-print("✅ HRL files copied to the separate parent folder and Excel file updated successfully!")
+print(f"✅ HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
