@@ -25,9 +25,27 @@ config_load_order = [
 ]
 
 # Function to normalize and clean text
+import re
+
 def normalize_text(text):
-    """Removes special characters, converts to lowercase, and standardizes spaces/hyphens."""
-    return re.sub(r'[^a-zA-Z0-9\s-]', '', str(text)).strip().lower()
+    """Normalize text while keeping structured patterns like '-INN' intact."""
+    text = str(text).strip().lower()  # Convert to lowercase and strip spaces
+
+    # Keep alphanumeric characters, spaces, dashes, and underscores
+    text = re.sub(r'[^a-zA-Z0-9\s-_]', '', text)  
+
+    # Convert multiple spaces into single underscores
+    text = re.sub(r'\s+', '_', text)  
+
+    # Handle `-_INN` or similar patterns by converting `-_` to just `-`
+    text = re.sub(r'_-([a-zA-Z0-9]+)', r'-\1', text)  
+
+    # Normalize multiple dashes and underscores separately
+    text = re.sub(r'[-]+', '-', text)  # Normalize multiple dashes
+    text = re.sub(r'[_]+', '_', text)  # Normalize multiple underscores
+
+    return text
+
 
 # Load "Business Approved List" into a DataFrame
 df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)  # Ensure all columns are strings
