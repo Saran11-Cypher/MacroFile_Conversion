@@ -75,24 +75,37 @@ df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to find matching files dynamically
 def find_matching_file(config_name, folder_path):
-    """Finds files that match config names flexibly."""
-    normalized_config_name = normalize_text(config_name)
+    """Finds files that strictly match the config name (ignoring case, special characters, and spacing)."""
+    # Pre-process the config name once
+    normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
+    
+    # Get all files at once and store in memory
+    all_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    
+    # First try exact matches
+    for filename in all_files:
+        # Try with modified filename first (replacing '_-' with '-')
+        temp_filename = filename.replace('_-', '-')
+        cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', temp_filename).lower()
+        
+        if normalized_config_name == cleaned_filename:
+            return filename
+    
+    # If no exact match, try partial matches
+    for filename in all_files:
+        temp_filename = filename.replace('_-', '-')
+        cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', temp_filename).lower()
+        
+        if normalized_config_name in cleaned_filename:
+            return filename
 
-    for filename in os.listdir(folder_path):
-        if os.path.isfile(os.path.join(folder_path, filename)):
-            cleaned_filename = normalize_text(filename)
+    return None
 
-            # Check if the cleaned filename contains the cleaned config name
-            if normalized_config_name in cleaned_filename:
-                return filename  # Return first matched file
+# ... rest of the code ...
 
-    return None  # No match found
-
-# Update HRL availability in DataFrame
-for index, row in df_bal.iterrows():
-    config_type = row["Config Type"]
-    config_name = row["Config Name"]
-
+# Add progress tracking for large file processing
+total_rows = len(df_bal)
+print(f"Processing {total_rows} configurations...")
     if pd.isna(config_name) or not str(config_name).strip():
         continue  # Skip empty config names
 
