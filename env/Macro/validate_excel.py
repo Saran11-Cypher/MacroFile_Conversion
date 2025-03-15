@@ -27,22 +27,34 @@ config_load_order = [
 
 ### ✅ Normalization Function (Fixes _-, _ issues)
 def normalize_text(text):
-    """Standardizes text by replacing special character patterns consistently."""
+    """Replaces special characters intelligently instead of removing them all."""
     if not isinstance(text, str):
         return ""
 
-    text = text.strip().lower()
-    
-    # Replace "_-" with just "-"
-    text = re.sub(r'_-', '-', text)
+    # Define specific replacements
+    replacements = {
+        "&": " and ",  # Replace '&' with ' and ' to match naming conventions
+        "-": " ",      # Keep hyphens as spaces to standardize
+        "_": " "       # Replace underscores with spaces for consistency
+    }
 
-    # Replace underscores with hyphens (so "Medicare_Alternate" becomes "Medicare-Alternate")
-    text = re.sub(r'_', '-', text)
+    # Apply replacements
+    for char, replacement in replacements.items():
+        text = text.replace(char, replacement)
 
-    # Remove any remaining special characters except hyphens
-    text = re.sub(r'[^a-zA-Z0-9-]', '', text)
-    
-    return text
+    # Remove other special characters except spaces and hyphens
+    text = re.sub(r'[^a-zA-Z0-9\s-]', '', text)
+
+    # Convert to lowercase and trim spaces
+    return text.strip().lower()
+
+# Test case
+config_name = "Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)"
+file_name = "BenefitPlanComponent.MedicalServices-Medicare_AlternateOffice_and_ClinicDefinition_-INN_CoinsuranceDeductibleWaived_Office_CopayDeductibleWaived.1800-01-01.a.hrl"
+
+print("Config Name:", normalize_text(config_name))
+print("File Name: ", normalize_text(file_name))
+
 
 # Load "Business Approved List" into a DataFrame
 df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
