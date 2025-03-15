@@ -6,10 +6,13 @@ from openpyxl import load_workbook
 
 EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"
 UPLOAD_FOLDER = "C:\\1"
+HRL_PARENT_FOLDER = "C:\\HRL_Collected"  # New parent folder for collected HRL files
 
 if not os.path.exists(UPLOAD_FOLDER):
     print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
     exit()
+
+os.makedirs(HRL_PARENT_FOLDER, exist_ok=True)  # Ensure the parent folder exists
 
 wb = load_workbook(EXCEL_FILE)
 ws_main = wb["Main"]
@@ -80,11 +83,11 @@ for index, row in df_bal.iterrows():
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
             source_path = os.path.join(selected_folders[config_type], matching_file)
-            target_folder = os.path.join(selected_folders[config_type], "HRL_Files")
+            target_folder = os.path.join(HRL_PARENT_FOLDER, config_type)
             os.makedirs(target_folder, exist_ok=True)
             target_path = os.path.join(target_folder, matching_file)
             
-            shutil.copy2(source_path, target_path)  # Changed from move to copy
+            shutil.copy2(source_path, target_path)  # Copy HRL file to the new parent folder
             df_bal.at[index, "File Name is correct in export sheet"] = target_path
         else:
             df_bal.at[index, "HRL Available?"] = "Not Found"
@@ -94,4 +97,4 @@ for row_idx, row in df_bal.iterrows():
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))
 
 wb.save(EXCEL_FILE)
-print("✅ HRL files copied to respective folders and Excel file updated successfully!")
+print("✅ HRL files copied to the separate parent folder and Excel file updated successfully!")
