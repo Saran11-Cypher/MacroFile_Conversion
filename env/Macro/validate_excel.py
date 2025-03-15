@@ -3,9 +3,8 @@ import pandas as pd
 import re
 from openpyxl import load_workbook
 
-# Paths (Update these with your actual paths)
-EXCEL_FILE = r"C:\Users\n925072\Downloads\MacroFile_Conversion-master\MacroFile_Conversion-master\New folder\convertor\Macro_Functional_Excel.xlsx"
-UPLOAD_FOLDER = r"C:\1"
+EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"  # Update with your actual file path
+UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
 
 # Ensure the folder exists
 if not os.path.exists(UPLOAD_FOLDER):
@@ -25,39 +24,12 @@ config_load_order = [
     "BenefitPlanTemplate", "Account", "BenefitPlan", "AccountPlanSelection"
 ]
 
-### ✅ Normalization Function (Fixes _-, _ issues)
+# Function to normalize and clean text
 def normalize_text(text):
-    """Replaces special characters intelligently instead of removing them all."""
-    if not isinstance(text, str):
-        return ""
-
-    # Define specific replacements
-    replacements = {
-        "&": " and ",  # Replace '&' with ' and ' to match naming conventions
-        "-": " ",      # Keep hyphens as spaces to standardize
-        "_": " "       # Replace underscores with spaces for consistency
-    }
-
-    # Apply replacements
-    for char, replacement in replacements.items():
-        text = text.replace(char, replacement)
-
-    # Remove other special characters except spaces and hyphens
-    text = re.sub(r'[^a-zA-Z0-9\s-]', '', text)
-
-    # Convert to lowercase and trim spaces
-    return text.strip().lower()
-
-# Test case
-config_name = "Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)"
-file_name = "BenefitPlanComponent.MedicalServices-Medicare_AlternateOffice_and_ClinicDefinition_-INN_CoinsuranceDeductibleWaived_Office_CopayDeductibleWaived.1800-01-01.a.hrl"
-
-print("Config Name:", normalize_text(config_name))
-print("File Name: ", normalize_text(file_name))
-
+    return re.sub(r'[^a-zA-Z0-9\s-]', '', str(text)).strip().lower()
 
 # Load "Business Approved List" into a DataFrame
-df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
+df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)  # Ensure all columns are strings
 df_bal["Config Type"] = df_bal["Config Type"].astype(str).apply(normalize_text)
 
 # Get the config types mentioned in "Business Approved List"
@@ -92,29 +64,30 @@ if not valid_orders.is_monotonic_increasing:
     print("❌ Error: Invalid Order! Please arrange the data correctly.")
     exit()
 
-# Remove the temporary "Order" column
+# Remove the temporary "Order" column (not needed in final output)
 df_bal.drop(columns=["Order"], inplace=True)
 
-### ✅ File Matching Function (Picks best match)
+# Function to match config names with uploaded files
 def find_matching_file(config_name, folder_path):
-    """Finds the best matching file based on normalized names."""
-    normalized_config_name = normalize_text(config_name)
-
-    best_match = None  # Track the closest match
+    # config_name = config_name.replace("&","and")
+    """Finds files that strictly match the config name (ignoring case, special characters, and spacing)."""
+    # Normalize the config name: remove special characters, lowercase, and replace spaces/hyphens with a dot
+    
+    if "&" in config_name:
+        config_name = config_name.replace("&","and")
+    
+    normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
+    #print(f"Normal Config Name:{normalized_config_name}")
 
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
-            cleaned_filename = normalize_text(filename)
-
-            if normalized_config_name == cleaned_filename:
-                return filename  # Exact match found
-
-            # Check if filename contains the normalized config name
+            # Normalize filename: remove special characters and lowercase
+            cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
+            # Check if the cleaned filename contains the cleaned config name
             if normalized_config_name in cleaned_filename:
-                best_match = filename  # Store closest match
-    
-    return best_match if best_match else None  # Return best match or None
+                return filename  # Return the first matched file
 
+    return None  # No match found
 # Check for HRL availability and update DataFrame
 for index, row in df_bal.iterrows():
     config_type = row["Config Type"]
@@ -138,15 +111,10 @@ for row_idx, row in df_bal.iterrows():
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))  # Ensure everything is saved as string
 
 wb.save(EXCEL_FILE)
-print("✅ Excel file updated successfully!")
+print("✅ Excel file updated successfully!...")
 
 
+# config_name = "Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)"
+# file_name = "BenefitPlanComponent.MedicalServices-Medicare_AlternateOffice_and_ClinicDefinition_-INN_CoinsuranceDeductibleWaived_Office_CopayDeductibleWaived.1800-01-01.a.hrl"
 
-config_name = "Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)"
-file_name = "BenefitPlanComponent.MedicalServices-Medicare_AlternateOffice_and_ClinicDefinition_-INN_CoinsuranceDeductibleWaived_Office_CopayDeductibleWaived.1800-01-01.a.hrl"
 
-print(f"config-Name:",normalize_text(config_name))
-print("File Name: ", normalize_text(file_name))
-
-config-Name: medical services - medicare alternate office  clinic definition - inn coinsurance deductible waived office copay deductible waived
-File Name:  benefitplancomponentmedicalservices-medicarealternateofficeandclinicdefinition-inncoinsurancedeductiblewaivedofficecopaydeductiblewaived1800-01
