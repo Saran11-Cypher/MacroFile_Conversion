@@ -25,11 +25,23 @@ config_load_order = [
 ]
 
 # Function to normalize and clean text
+import re
+
 def normalize_text(text):
-    """Standardizes text by replacing '&' with 'and' without spaces, then removing unwanted characters."""
-    text = str(text).replace("&", "and")  # Replace '&' with 'and' (no spaces)
-    text = re.sub(r'[^a-zA-Z0-9\s-]', '', text)  # Remove unwanted characters except spaces and hyphens
-    return text.strip().lower()
+    """Standardizes text by replacing '&' with 'and', removing special characters, and ensuring proper spacing/hyphenation."""
+    text = str(text).strip()
+
+    # Replace '&' with 'and' before applying other transformations
+    text = text.replace("&", " and ")
+
+    # Remove unwanted special characters but keep letters, numbers, spaces, and hyphens
+    text = re.sub(r'[^a-zA-Z0-9\s-]', '', text)
+
+    # Normalize multiple spaces (from "and" replacements) to a single space
+    text = re.sub(r'\s+', ' ', text).strip().lower()
+
+    return text
+
 
 # Load "Business Approved List" into a DataFrame
 df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)  # Ensure all columns are strings
