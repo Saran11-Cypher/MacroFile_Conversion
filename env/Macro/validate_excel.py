@@ -3,8 +3,9 @@ import pandas as pd
 import re
 from openpyxl import load_workbook
 
-EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"
-UPLOAD_FOLDER = "C:\\1"  # Change to the folder containing uploaded files
+# Paths (Update these with your actual paths)
+EXCEL_FILE = r"C:\Users\n925072\Downloads\MacroFile_Conversion-master\MacroFile_Conversion-master\New folder\convertor\Macro_Functional_Excel.xlsx"
+UPLOAD_FOLDER = r"C:\1"
 
 # Ensure the folder exists
 if not os.path.exists(UPLOAD_FOLDER):
@@ -24,17 +25,27 @@ config_load_order = [
     "BenefitPlanTemplate", "Account", "BenefitPlan", "AccountPlanSelection"
 ]
 
-# Function to normalize and clean text
+### ✅ Normalization Function (Fixes _-, _ issues)
 def normalize_text(text):
-    """Removes special characters, converts to lowercase, and standardizes spaces/hyphens."""
-    text = str(text).strip().lower()
-    text = text.replace("&", "and")  # Convert '&' to 'and'
-    text = re.sub(r'[^a-zA-Z0-9\s-]', '', text)  # Remove special characters except hyphen
-    text = re.sub(r'\s+', '', text)  # Remove spaces
+    """Standardizes text by replacing special character patterns consistently."""
+    if not isinstance(text, str):
+        return ""
+
+    text = text.strip().lower()
+    
+    # Replace "_-" with just "-"
+    text = re.sub(r'_-', '-', text)
+
+    # Replace underscores with hyphens (so "Medicare_Alternate" becomes "Medicare-Alternate")
+    text = re.sub(r'_', '-', text)
+
+    # Remove any remaining special characters except hyphens
+    text = re.sub(r'[^a-zA-Z0-9-]', '', text)
+    
     return text
 
 # Load "Business Approved List" into a DataFrame
-df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)  # Ensure all columns are strings
+df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
 df_bal["Config Type"] = df_bal["Config Type"].astype(str).apply(normalize_text)
 
 # Get the config types mentioned in "Business Approved List"
@@ -69,34 +80,28 @@ if not valid_orders.is_monotonic_increasing:
     print("❌ Error: Invalid Order! Please arrange the data correctly.")
     exit()
 
-# Remove the temporary "Order" column (not needed in final output)
+# Remove the temporary "Order" column
 df_bal.drop(columns=["Order"], inplace=True)
 
-# Function to extract config name from filename
-def extract_config_from_filename(filename):
-    """
-    Extracts and normalizes the configuration name portion from the filename.
-    - Removes 'BenefitPlanComponent.' prefix
-    - Removes timestamp and extension (e.g., .1800-01-01.a.hrl)
-    """
-    if "." in filename:
-        filename = filename.split(".", 1)[1]  # Remove prefix
-    filename = filename.rsplit(".", 2)[0]  # Remove timestamp & extension
-    return normalize_text(filename)
-
-# Function to find the correct file match
+### ✅ File Matching Function (Picks best match)
 def find_matching_file(config_name, folder_path):
-    """Finds a strictly matching file for the given config name."""
+    """Finds the best matching file based on normalized names."""
     normalized_config_name = normalize_text(config_name)
+
+    best_match = None  # Track the closest match
 
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
-            cleaned_filename = extract_config_from_filename(filename)
+            cleaned_filename = normalize_text(filename)
 
-            if cleaned_filename == normalized_config_name:
+            if normalized_config_name == cleaned_filename:
                 return filename  # Exact match found
 
-    return None  # No match found
+            # Check if filename contains the normalized config name
+            if normalized_config_name in cleaned_filename:
+                best_match = filename  # Store closest match
+    
+    return best_match if best_match else None  # Return best match or None
 
 # Check for HRL availability and update DataFrame
 for index, row in df_bal.iterrows():
