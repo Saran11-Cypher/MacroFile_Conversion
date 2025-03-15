@@ -127,3 +127,14 @@ for row_idx, row in df_bal.iterrows():
 
 wb.save(EXCEL_FILE)
 print("✅ Excel file updated successfully!")
+
+
+
+config_name = "Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)"
+file_name = "BenefitPlanComponent.MedicalServices-Medicare_AlternateOffice_and_ClinicDefinition_-INN_CoinsuranceDeductibleWaived_Office_CopayDeductibleWaived.1800-01-01.a.hrl"
+
+print(f"config-Name:",normalize_text(config_name))
+print("File Name: ", normalize_text(file_name))
+
+config-Name: medical services - medicare alternate office  clinic definition - inn coinsurance deductible waived office copay deductible waived
+File Name:  benefitplancomponentmedicalservices-medicarealternateofficeandclinicdefinition-inncoinsurancedeductiblewaivedofficecopaydeductiblewaived1800-01
