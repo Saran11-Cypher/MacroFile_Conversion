@@ -109,3 +109,12 @@ for row_idx, row in df_bal.iterrows():
 
 wb.save(EXCEL_FILE)
 print("✅ Excel file updated successfully!...")
+
+
+Searching for config: Medical Services - Medicare (Alternate Office & Clinic Definition) - INN (Coinsurance Deductible Waived) Office (Copay Deductible Waived)ng 
+Normalized Name: medicalservicesmedicarealternateofficeclinicdefinitioninncoinsurancedeductiblewaivedofficecopaydeductiblewaived
+
+Clr=eaned filename : benefitplancomponentabortionelectivestandardmandaterteonlyooncoinsurance18000101ahrl
+Clr=eaned filename : benefitplancomponentmedicalservicesmedicarealternateofficeandclinicdefinitioninncoinsurancedeductiblewaivedofficecopaydeductiblewaived18000101ahrl
+Clr=eaned filename : benefitplancomponentmedicalservicesmedicarealternateofficeandclinicdefinitioninncoinsuranceofficecopaydeductiblewaived18000101ahrl
+Clr=eaned filename : benefitplancomponentmedicalservicesmedicarealternateofficeandclinicdefinitionooncoinsuranceofficecopaydeductiblewaived18000101ahrl
