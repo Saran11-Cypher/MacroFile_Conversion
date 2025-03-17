@@ -68,7 +68,8 @@ def find_matching_file(config_name, config_type, folder_path):
     normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
 
     # Expected filename format: "<config_type>.<config_name>.hrl"
-    expected_filename = f"{normalized_config_type}.{normalized_config_name}.hrl"
+    expected_filename = rf"^{normalized_config_type}\.{normalized_config_name}\.\d{{4}}-\d{{2}}-\d{{2}}\.a\.hrl$"
+
 
     # Iterate through the files in the given folder
     for filename in os.listdir(folder_path):
