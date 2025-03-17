@@ -59,18 +59,25 @@ if not valid_orders.is_monotonic_increasing:
 
 df_bal.drop(columns=["Order"], inplace=True)
 
-def find_matching_file(config_name, folder_path):
+def find_matching_file(config_name, config_type, folder_path):
     if "&" in config_name:
         config_name = config_name.replace("&", "and")
-    
+
+    # Normalize text by removing spaces and special characters, keeping only alphanumeric
+    normalized_config_type = re.sub(r'[^a-zA-Z0-9]', '', config_type).lower()
     normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
-    
+
+    # Expected filename format: "<config_type>.<config_name>.hrl"
+    expected_filename = f"{normalized_config_type}.{normalized_config_name}.hrl"
+
+    # Iterate through the files in the given folder
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
-            cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
-            if normalized_config_name in cleaned_filename:
-                return filename
-    return None
+            if filename.lower() == expected_filename:
+                return filename  # Return exact matching file
+
+    return None  # Return None if no exact match is found
+
 
 for index, row in df_bal.iterrows():
     config_type = row["Config Type"]
