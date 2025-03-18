@@ -59,25 +59,36 @@ if not valid_orders.is_monotonic_increasing:
 
 df_bal.drop(columns=["Order"], inplace=True)
 
-def find_matching_file(config_name, folder_path):
+def find_matching_file(config_name, config_type, folder_path):
+    # Replace '&' with 'and' in config_name
     if "&" in config_name:
         config_name = config_name.replace("&", "and")
 
-    # Normalize config name (remove special chars, lowercase)
+    # Normalize config name (remove special characters, lowercase)
     normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
+    
+    # Construct exact match pattern: config_type.config_name
+    exact_match_pattern = f"{config_type.lower()}.{normalized_config_name}"
 
-    exact_matches = []
+    # Store all normalized filenames in a list
+    normalized_filenames = []
+    original_filenames = {}
 
     for filename in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, filename)):
-            cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
+            # Normalize filename (remove special characters, lowercase)
+            cleaned_filename = re.sub(r'[^a-zA-Z0-9.]', '', filename).lower()
 
-            if normalized_config_name in cleaned_filename:
-                index = cleaned_filename.find(normalized_config_name)
+            # Store original filename for reference
+            normalized_filenames.append(cleaned_filename)
+            original_filenames[cleaned_filename] = filename
 
-                if index == 0 and cleaned_filename.endswith(normalized_config_name):
-                    exact_matches.append(filename)  # Exact match (no prefix, no suffix)
+    # Search for an exact match
+    for nf in normalized_filenames:
+        if nf.startswith(exact_match_pattern):
+            return original_filenames[nf]  # Return the original filename
 
+    return "HRL Not Found"  # No exact match found
     return exact_matches[0] if exact_matches else None  # Return filename or None
 
 
