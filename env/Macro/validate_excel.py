@@ -59,28 +59,26 @@ if not valid_orders.is_monotonic_increasing:
 
 df_bal.drop(columns=["Order"], inplace=True)
 
-def find_matching_file(config_type, config_name, folder_path):
-    # Normalize config type and config name
-    normalized_config_type = normalize_text(config_type)
-    normalized_config_name = normalize_text(config_name)
+def find_matching_file(config_name, folder_path):
+    if "&" in config_name:
+        config_name = config_name.replace("&", "and")
 
-    # Expected pattern for exact filename match
-    expected_pattern = rf"^{normalized_config_type}\.{normalized_config_name}\.\d{{4}}-\d{{2}}-\d{{2}}\.a\.hrl$"
+    # Normalize config name (remove special chars, lowercase)
+    normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
 
-    print(f"\n🔹 Searching for: {normalized_config_type}.{normalized_config_name}.YYYY-MM-DD.a.hrl")
-    print(f"🔹 Expected Pattern: {expected_pattern}\n")
+    exact_matches = []
 
-    # Load and normalize all filenames first (for fast lookup)
-    filenames = {normalize_text(f): f for f in os.listdir(folder_path)}
+    for filename in os.listdir(folder_path):
+        if os.path.isfile(os.path.join(folder_path, filename)):
+            cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
 
-    # Iterate through pre-normalized filenames
-    for normalized_filename, original_filename in filenames.items():
-        if re.fullmatch(expected_pattern, normalized_filename):
-            print(f"✅ Match Found: {original_filename}")
-            return original_filename  # Return original filename (not normalized)
+            if normalized_config_name in cleaned_filename:
+                index = cleaned_filename.find(normalized_config_name)
 
-    print("❌ No exact match found!")
-    return None
+                if index == 0 and cleaned_filename.endswith(normalized_config_name):
+                    exact_matches.append(filename)  # Exact match (no prefix, no suffix)
+
+    return exact_matches[0] if exact_matches else None  # Return filename or None
 
 
 for index, row in df_bal.iterrows():
