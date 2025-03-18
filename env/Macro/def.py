@@ -1,8 +1,34 @@
+import os
+import pandas as pd
 import re
+import shutil
+from datetime import datetime
+from openpyxl import load_workbook
+
+EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"
+UPLOAD_FOLDER = "C:\\1"
+DATE_STAMP = datetime.now().strftime("%Y%m%d_%H%M%S")  # New parent folder with date and time stamp
+HRL_PARENT_FOLDER = f"C:\\Datas\\HRLS_{DATE_STAMP}"  # Updated parent folder structure
+
+if not os.path.exists(UPLOAD_FOLDER):
+    print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
+    exit()
+
+os.makedirs(HRL_PARENT_FOLDER, exist_ok=True)  # Ensure the parent folder exists
+
+wb = load_workbook(EXCEL_FILE)
+ws_main = wb["Main"]
+ws_bal = wb["Business Approved List"]
+
+config_load_order = [
+    "ValueList", "AttributeType", "UserDefinedTerm", "LineOfBusiness",
+    "Product", "ServiceCategory", "BenefitNetwork", "NetworkDefinitionComponent",
+    "BenefitPlanComponent", "WrapAroundBenefitPlan", "BenefitPlanRider",
+    "BenefitPlanTemplate", "Account", "BenefitPlan", "AccountPlanSelection"
+]
 
 def normalize_text(text):
-    """Normalize text by converting to lowercase and replacing separators with spaces."""
-    return re.sub(r'[^a-zA-Z0-9\s]', ' ', text).strip().lower()
+    return re.sub(r'[^a-zA-Z0-9\s-]', '', str(text)).strip().lower().replace(" ","-")
 
 def preprocess_filenames(file_list):
     """Precompute a dictionary with filenames and their normalized words for quick lookup."""
@@ -12,7 +38,36 @@ def preprocess_filenames(file_list):
         file_dict[file_name] = normalized_file_name.split()  # Store words as a list (preserving order)
     return file_dict
 
-def find_best_match(config_name, file_dict):
+df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
+df_bal["Config Type"] = df_bal["Config Type"].astype(str).apply(normalize_text)
+
+approved_config_types = set(df_bal["Config Type"].dropna().unique())
+
+available_folders = {normalize_text(f): os.path.join(UPLOAD_FOLDER, f) 
+                     for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))}
+
+selected_folders = {config: path for config, path in available_folders.items() if config in approved_config_types}
+
+if not selected_folders:
+    print("❌ Error: No matching config folders found inside the parent folder.")
+    exit()
+
+for config_type, folder_path in selected_folders.items():
+    uploaded_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    file_count = len(uploaded_files)
+    ws_main.append([config_type, file_count, "Pending", "Pending", "Pending"])
+
+df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(x) if x in config_load_order else -1)
+
+valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
+
+if not valid_orders.is_monotonic_increasing:
+    print("❌ Error: Invalid Order! Please arrange the data correctly.")
+    exit()
+
+df_bal.drop(columns=["Order"], inplace=True)
+
+def find_matching_file(config_name, file_dict):
     """Find the best match for the given config name with no-prefix priority logic."""
     normalized_config_name = normalize_text(config_name)
     config_words = normalized_config_name.split()  # Convert to a list of words
@@ -40,33 +95,32 @@ def find_best_match(config_name, file_dict):
         return prefixed_matches[0]  # Select prefixed match if no exact match found
 
     return None  # No match found
+for index, row in df_bal.iterrows():
+    config_type = row["Config Type"]
+    config_name = row["Config Name"]
 
-# Example Scenarios
+    if pd.isna(config_name) or not str(config_name).strip():
+        continue
 
-# Scenario 1
-config_name_1 = "Physical and Occupational Therapy Excludes Home - Medicare Outpatient Definition - INN Copay."
-file_names_1 = [
-    "ServiceCategory.Physical and Occupational Therapy - Medicare Outpatient Definition - INN (Copay).2025-01-01.a.hrl",
-    "ServiceCategory.Physical and Occupational Therapy - Medicare Outpatient Definition - INN (Copay Deductible Waived).2025-01-01.a.hrl"
-]
+    if config_type in selected_folders:
+        folder_path = selected_folders[config_type]
+        matching_file = find_matching_file(config_name,selected_folders[config_type])
 
-# Scenario 2
-config_name_2 = "Surgery"
-file_names_2 = [
-    "ServiceCategory.Surgery.1800-01-01.a.hrl",
-    "ServiceCategory.Heart.1800-01-01.a.hrl",
-    "ServiceCategory.Medical_Vision-item.2023-05-12.a.hrl",
-    "ServiceCategory.Vision-item.CareFree-Surgery.1800-01-01.a.hrl",
-    "ServiceCategory.Surgeryitems.1800-01-01.a.hrl"
-]
+        if matching_file:
+            df_bal.at[index, "HRL Available?"] = "HRL Found"
+            source_path = os.path.join(folder_path, matching_file)
+            target_folder = os.path.join(HRL_PARENT_FOLDER, config_type)
+            os.makedirs(target_folder, exist_ok=True)
+            target_path = os.path.join(target_folder, matching_file)
+            
+            shutil.copy2(source_path, target_path)  # Copy HRL file to the new parent folder
+            df_bal.at[index, "File Name is correct in export sheet"] = source_path  # Keep original path
+        else:
+            df_bal.at[index, "HRL Available?"] = "Not Found"
 
-# Preprocess filenames
-file_dict_1 = preprocess_filenames(file_names_1)
-file_dict_2 = preprocess_filenames(file_names_2)
+for row_idx, row in df_bal.iterrows():
+    for col_idx, value in enumerate(row):
+        ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))
 
-# Find the best match for each scenario
-matched_file_1 = find_best_match(config_name_1, file_dict_1)
-matched_file_2 = find_best_match(config_name_2, file_dict_2)
-
-print("Scenario 1 Matched File:", matched_file_1 if matched_file_1 else "No exact match found")
-print("Scenario 2 Matched File:", matched_file_2 if matched_file_2 else "No exact match found")
+wb.save(EXCEL_FILE)
+print(f"✅ HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
