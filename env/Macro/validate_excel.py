@@ -108,3 +108,21 @@ for row_idx, row in df_bal.iterrows():
 
 wb.save(EXCEL_FILE)
 print(f"✅ HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
+
+Config Names:
+Chiropractor Supplier Classification - Pend
+Vision - Exam
+Laboratory - Diagnostic
+Surgery
+Diagnostic Testing
+X-ray - Diagnostic
+BRLOAPEND
+Highest Copay - Medicare - INN - Benefit Labels - Practitioner
+Global Exclusion (Allows OTC Female Contraceptives) 
+Global Exclusion (Allows OTC Male & Female Contraceptives) - MO
+Global Exclusion - Medicare
+Physical and Occupational Therapy (Excludes Home) - Medicare Outpatient Definition (Alternate Office & Clinic Definition) - INN (Copay Deductible Waived)
+Physical and Occupational Therapy (Excludes Home) - Medicare Outpatient Definition - INN (Copay)
+Physical and Occupational Therapy (Excludes Home) - Medicare Outpatient Definition - INN (Copay Deductible Waived)
+Gold S - HMO (FL) 2024
+
