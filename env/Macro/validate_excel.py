@@ -59,6 +59,7 @@ if not valid_orders.is_monotonic_increasing:
 
 df_bal.drop(columns=["Order"], inplace=True)
 
+
 def find_matching_file(config_name, config_type, folder_path):
     # Replace '&' with 'and' in config_name
     if "&" in config_name:
@@ -88,8 +89,7 @@ def find_matching_file(config_name, config_type, folder_path):
         if nf.startswith(exact_match_pattern):
             return original_filenames[nf]  # Return the original filename
 
-    return "HRL Not Found"  # No exact match found
-    return exact_matches[0] if exact_matches else None  # Return filename or None
+    return None  # No exact match found # Return filename or None
 
 
 for index, row in df_bal.iterrows():
