@@ -59,25 +59,28 @@ if not valid_orders.is_monotonic_increasing:
 
 df_bal.drop(columns=["Order"], inplace=True)
 
-def find_matching_file(config_name, config_type, folder_path):
-    if "&" in config_name:
-        config_name = config_name.replace("&", "and")
+def find_matching_file(config_type, config_name, folder_path):
+    # Normalize config type and config name
+    normalized_config_type = normalize_text(config_type)
+    normalized_config_name = normalize_text(config_name)
 
-    # Normalize text by removing spaces and special characters, keeping only alphanumeric
-    normalized_config_type = re.sub(r'[^a-zA-Z0-9]', '', config_type).lower()
-    normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
+    # Expected pattern for exact filename match
+    expected_pattern = rf"^{normalized_config_type}\.{normalized_config_name}\.\d{{4}}-\d{{2}}-\d{{2}}\.a\.hrl$"
 
-    # Expected filename format: "<config_type>.<config_name>.hrl"
-    expected_filename = rf"^{normalized_config_type}\.{normalized_config_name}\.\d{{4}}-\d{{2}}-\d{{2}}\.a\.hrl$"
+    print(f"\n🔹 Searching for: {normalized_config_type}.{normalized_config_name}.YYYY-MM-DD.a.hrl")
+    print(f"🔹 Expected Pattern: {expected_pattern}\n")
 
+    # Load and normalize all filenames first (for fast lookup)
+    filenames = {normalize_text(f): f for f in os.listdir(folder_path)}
 
-    # Iterate through the files in the given folder
-    for filename in os.listdir(folder_path):
-        if os.path.isfile(os.path.join(folder_path, filename)):
-            if filename.lower() == expected_filename:
-                return filename  # Return exact matching file
+    # Iterate through pre-normalized filenames
+    for normalized_filename, original_filename in filenames.items():
+        if re.fullmatch(expected_pattern, normalized_filename):
+            print(f"✅ Match Found: {original_filename}")
+            return original_filename  # Return original filename (not normalized)
 
-    return None  # Return None if no exact match is found
+    print("❌ No exact match found!")
+    return None
 
 
 for index, row in df_bal.iterrows():
