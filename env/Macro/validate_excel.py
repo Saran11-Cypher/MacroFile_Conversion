@@ -59,28 +59,48 @@ if not valid_orders.is_monotonic_increasing:
 
 df_bal.drop(columns=["Order"], inplace=True)
 
-def find_matching_file(config_name, config_type, folder_path):
-    print(f"\n🔍 DEBUG: Searching for matching file in folder: {folder_path}")    
-    if "&" in config_name:
-        config_name = config_name.replace("&", "and")
+import os
+import re
+
+def normalize_text(text):
+    """Normalize text by removing spaces, special characters, and converting to lowercase."""
+    return re.sub(r'[\s\-]+', '', text).lower()
+
+def clean_filename(filename):
+    """Remove the date and suffix (.a.hrl) from filenames."""
+    return re.sub(r'\.\d{4}-\d{2}-\d{2}\.a\.hrl$', '', filename)
+
+def find_matching_file(config_type, config_name, folder_path):
     """Find an exact match for the given Config Type and Config Name in the folder."""
     normalized_config_type = normalize_text(config_type)
     normalized_config_name = normalize_text(config_name)
 
-    # Store all filenames in a normalized format
+    # Store all filenames in a normalized format without date suffix
     normalized_files = {
-        normalize_text(f): f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))
+        clean_filename(normalize_text(f)): f 
+        for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))
     }
 
-    # Construct the expected pattern
-    expected_pattern = f"{normalized_config_type}.{normalized_config_name}.*.a.hrl"
+    # Debug Output: Print only normalized filenames (keys)
+    print("\n--- Normalized Filenames Without Date (Keys Only) ---")
+    for norm_file in normalized_files.keys():
+        print(norm_file)
+
+    # Construct the expected pattern (without date & extension)
+    expected_pattern = f"{normalized_config_type}.{normalized_config_name}"
+
+    # Debug Output: Print the expected pattern
+    print(f"\nExpected Pattern: {expected_pattern}")
 
     # Check for an exact match
     for norm_file, original_file in normalized_files.items():
-        if norm_file.startswith(expected_pattern):  # Ensures exact match before '18000101'
+        if norm_file == expected_pattern:  # Ensure exact match
+            print(f"\n✅ Match Found: {original_file}")
             return original_file  # Return the actual filename
 
+    print("\n❌ No exact match found")
     return None  # No exact match found
+
 
 
 
