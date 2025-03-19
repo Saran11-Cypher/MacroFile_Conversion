@@ -62,15 +62,24 @@ df_bal.drop(columns=["Order"], inplace=True)
 def find_matching_file(config_name, folder_path):
     if "&" in config_name:
         config_name = config_name.replace("&", "and")
-    
-    normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
-    
-    for filename in os.listdir(folder_path):
-        if os.path.isfile(os.path.join(folder_path, filename)):
-            cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
-            if normalized_config_name in cleaned_filename:
-                return filename
-    return None
+    """Find an exact match for the given Config Type and Config Name in the folder."""
+    normalized_config_type = normalize_text(config_type)
+    normalized_config_name = normalize_text(config_name)
+
+    # Store all filenames in a normalized format
+    normalized_files = {
+        normalize_text(f): f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))
+    }
+
+    # Construct the expected pattern
+    expected_pattern = f"{normalized_config_type}.{normalized_config_name}.*.a.hrl"
+
+    # Check for an exact match
+    for norm_file, original_file in normalized_files.items():
+        if norm_file.startswith(expected_pattern):  # Ensures exact match before '18000101'
+            return original_file  # Return the actual filename
+
+    return None  # No exact match found
 
 for index, row in df_bal.iterrows():
     config_type = row["Config Type"]
