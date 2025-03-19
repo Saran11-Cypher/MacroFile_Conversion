@@ -59,49 +59,29 @@ if not valid_orders.is_monotonic_increasing:
 
 df_bal.drop(columns=["Order"], inplace=True)
 
-
-import os
-import re
-
 def find_matching_file(config_name, config_type, folder_path):
-    print(f"\n🔍 DEBUG: Searching for matching file in folder: {folder_path}")
-    
+    print(f"\n🔍 DEBUG: Searching for matching file in folder: {folder_path}")    
     if "&" in config_name:
         config_name = config_name.replace("&", "and")
+    """Find an exact match for the given Config Type and Config Name in the folder."""
+    normalized_config_type = normalize_text(config_type)
+    normalized_config_name = normalize_text(config_name)
 
-    # Normalize config name
-    normalized_config_name = re.sub(r'[^a-zA-Z0-9]', '', config_name).lower()
-    search_pattern = f"{config_type.lower()}{normalized_config_name}"  # Exact match format
+    # Store all filenames in a normalized format
+    normalized_files = {
+        normalize_text(f): f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))
+    }
 
-    print(f"➡️ Normalized Config Name: {normalized_config_name}")
-    print(f"➡️ Search Pattern: {search_pattern}")
+    # Construct the expected pattern
+    expected_pattern = f"{normalized_config_type}.{normalized_config_name}.*.a.hrl"
 
-    # Dictionary to store normalized filename → original filename
-    filename_mapping = {}
+    # Check for an exact match
+    for norm_file, original_file in normalized_files.items():
+        if norm_file.startswith(expected_pattern):  # Ensures exact match before '18000101'
+            return original_file  # Return the actual filename
 
-    # Iterate through folder and normalize filenames
-    print("\n📂 Scanning folder contents:")
-    for filename in os.listdir(folder_path):
-        if os.path.isfile(os.path.join(folder_path, filename)):
-            cleaned_filename = re.sub(r'[^a-zA-Z0-9]', '', filename).lower()
-            filename_mapping[cleaned_filename] = filename  # Store mapping
-            
-            print(f"  - Original Filename: {filename}")
-            print(f"    ➡️ Normalized Filename: {cleaned_filename}")
+    return None  # No exact match found
 
-    print("\n📌 Final Filename Mapping Dictionary:")
-    for key, value in filename_mapping.items():
-        print(f"  {key} → {value}")
-
-    # ✅ Check for exact match in dictionary keys
-    matching_file = filename_mapping.get(search_pattern, "HRL Not Found")
-    
-    if matching_file != "HRL Not Found":
-        print(f"\n✅ MATCH FOUND: {matching_file}")
-    else:
-        print("\n❌ No matching file found.")
-    
-    return matching_file
 
 
 
