@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 import shutil
 from openpyxl import load_workbook
-from tqdm import tqdm  # Ensure tqdm is installed
+from tqdm import tqdm  
 
 EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"
 UPLOAD_FOLDER = "C:\\1"
@@ -27,11 +27,11 @@ config_load_order = [
     "BenefitPlanTemplate", "Account", "BenefitPlan", "AccountPlanSelection"
 ]
 
+def trim_suffix(filename):
+    return re.sub(r'\.\d{4}-\d{2}-\d{2}\..*$', '', filename)
+
 def normalize_text(text):
     return re.sub(r'[^a-zA-Z0-9.]','', str(text)).strip().lower()
-
-def get_base_filename(filename):
-    return re.sub(r'\.\d{4}-\d{2}-\d{2}\..*$', '', filename)
 
 def extract_date_from_filename(filename):
     match = re.search(r'\.(\d{4}-\d{2}-\d{2})\.', filename)
@@ -44,7 +44,7 @@ def analyze_files(selected_folders):
         for file in os.listdir(folder_path):
             full_path = os.path.join(folder_path, file)
             if os.path.isfile(full_path):
-                base_name = get_base_filename(file)
+                base_name = trim_suffix(file)
                 file_map.setdefault(base_name, []).append((file, full_path))
     duplicates = {base: versions for base, versions in file_map.items() if len(versions) > 1}
     return file_map, duplicates
@@ -85,10 +85,10 @@ available_folders = {
     if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))
 }
 
-selected_folders = {
-    config: path for config, path in available_folders.items()
-    if config in approved_config_types
-}
+available_folders = {normalize_text(f): os.path.join(UPLOAD_FOLDER, f) 
+                     for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))}
+
+selected_folders = {config: path for config, path in available_folders.items() if config in approved_config_types}
 
 if not selected_folders:
     print("❌ Error: No matching config folders found inside the parent folder.")
@@ -102,8 +102,8 @@ selected_files_map = select_files(file_map, duplicates_with_versions, version_ch
 # Count files and update Main sheet
 for config_type, folder_path in selected_folders.items():
     uploaded_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
-    ws_main.append([config_type, len(uploaded_files), "Pending", "Pending", "Pending"])
-
+    file_count = len(uploaded_files)
+    ws_main.append([config_type, file_count, "Pending", "Pending", "Pending"])
 # Validate config order
 df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(x) if x in config_load_order else -1)
 valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
@@ -114,15 +114,39 @@ if not valid_orders.is_monotonic_increasing:
 df_bal.drop(columns=["Order"], inplace=True)
 
 # Match config files to selected files
-def find_matching_file(config_type, config_name):
+def find_matching_file(config_type, config_name, folder_path):
     if "&" in config_name:
         config_name = config_name.replace("&", "and")
-
+    """Find an exact match for the given Config Type and Config Name in the folder."""
     normalized_config_type = normalize_text(config_type)
     normalized_config_name = normalize_text(config_name)
-    expected_pattern = f"{normalized_config_type}.{normalized_config_name}"
-    return selected_files_map.get(expected_pattern, None)
 
+    # Store all filenames in a normalized format without date suffix
+    normalized_files = {
+        normalize_text(trim_suffix(f)): f 
+        for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))
+    }
+
+    # Debug Output: Print only normalized filenames (keys)
+    # print("\n--- Normalized Filenames Without Date (Keys Only) ---")
+    # for norm_file in normalized_files.keys():
+    #     print(norm_file)
+
+    # Construct the expected pattern (without date & extension)
+    expected_pattern = f"{normalized_config_type}.{normalized_config_name}"
+
+    # Debug Output: Print the expected pattern
+    #print(f"\nExpected Pattern: {expected_pattern}")
+
+    # Check for an exact match
+    for norm_file, original_file in normalized_files.items():
+        if norm_file == expected_pattern:  # Ensure exact match
+            # print(f"\n✅ Match Found: {original_file}")
+            return original_file  # Return the actual filename
+
+    print("\n❌ No exact match found")
+    return None  # No exact match found
+# Check for HRL availability and update DataFrame
 for index, row in df_bal.iterrows():
     config_type = row["Config Type"]
     config_name = row["Config Name"]
@@ -131,22 +155,23 @@ for index, row in df_bal.iterrows():
         continue
 
     if config_type in selected_folders:
-        matching_file_path = find_matching_file(config_type, config_name)
+        matching_file = find_matching_file(config_type,config_name, selected_folders[config_type])
 
-        if matching_file_path:
+        if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
+            source_path = os.path.join(selected_folders[config_type], matching_file)
             target_folder = os.path.join(HRL_PARENT_FOLDER, config_type)
             os.makedirs(target_folder, exist_ok=True)
-            target_path = os.path.join(target_folder, os.path.basename(matching_file_path))
-            shutil.copy2(matching_file_path, target_path)
-            df_bal.at[index, "File Name is correct in export sheet"] = matching_file_path
+            target_path = os.path.join(target_folder, matching_file)
+            
+            shutil.copy2(source_path, target_path)  # Copy HRL file to the new parent folder
+            df_bal.at[index, "File Name is correct in export sheet"] = source_path  # Keep original path
         else:
             df_bal.at[index, "HRL Available?"] = "Not Found"
 
-# Update Excel sheet
 for row_idx, row in df_bal.iterrows():
     for col_idx, value in enumerate(row):
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))
 
 wb.save(EXCEL_FILE)
-print(f"\n✅ HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
+print(f"✅ HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
