@@ -145,37 +145,42 @@ if not valid_orders.is_monotonic_increasing:
 df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to find matching file
-def find_matching_file(config_type, config_name, folder_path):
+def find_matching_file(config_type, config_name):
     print(f"🔍 Finding matching file for {config_type}.{config_name}...")
 
-    normalized_config_type = normalize_text(config_type)
-    normalized_config_name = normalize_text(config_name)
+    normalized_key = f"{normalize_text(config_type)}.{normalize_text(config_name)}"
 
-    expected_pattern = f"{normalized_config_type}.{normalized_config_name}"
+    # Step 1: Search in single-version files
+    if normalized_key in single_version_files:
+        print(f"✅ Found in single-version files: {single_version_files[normalized_key][0]}")
+        return single_version_files[normalized_key][0]
 
-    candidates = []
-    for file in os.listdir(folder_path):
-        if os.path.isfile(os.path.join(folder_path, file)):
-            normalized_file = normalize_text(trim_suffix(file))
-            if normalized_file == expected_pattern:
-                file_date = extract_date_from_filename(file)
-                candidates.append((file, file_date))
+    # Step 2: Search in multi-version files
+    if normalized_key in multi_version_files:
+        candidates = multi_version_files[normalized_key]
 
-    if not candidates:
-        print(f"❌ No matching files found for {config_type} - {config_name}.")
-        return None
+        # Sort based on date extracted from filenames
+        candidates_with_dates = []
+        for file in candidates:
+            file_date = extract_date_from_filename(file)
+            candidates_with_dates.append((file, file_date))
+        
+        # Sort candidates by date
+        candidates_with_dates.sort(key=lambda x: (x[1] or datetime.min))
+
+        if selected_version == 'latest':
+            selected_file = candidates_with_dates[-1][0]
+        else:
+            selected_file = candidates_with_dates[0][0]
+
+        print(f"✅ Found in multi-version files, selected: {selected_file}")
+        return selected_file
+
+    print(f"❌ No matching file found for {config_type}.{config_name}.")
+    return None
 
     # Sort candidates based on date
     candidates = sorted(candidates, key=lambda x: (x[1] or datetime.min))
-
-    # Select based on user choice
-    if selected_version == 'latest':
-        selected_file = candidates[-1][0]  # Latest
-    else:
-        selected_file = candidates[0][0]   # Oldest
-
-    print(f"✅ Selected file for {config_type} - {config_name}: {selected_file}")
-    return selected_file
 
 # Check for HRL availability and copy files
 print("🔄 Checking HRL availability and copying files...")
