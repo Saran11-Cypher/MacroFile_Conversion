@@ -1,126 +1,187 @@
 import os
-import shutil
 import pandas as pd
+import re
+from datetime import datetime
+import shutil
+from openpyxl import load_workbook
 
-# Constants for folder paths
-UPLOAD_FOLDER = "/path/to/your/upload/folder"
-HRL_PARENT_FOLDER = "/path/to/your/output/folder"
+# ---------------------------------------------
+# Constants
+# ---------------------------------------------
+EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"
+UPLOAD_FOLDER = "C:\\1"
+DATE_STAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
+HRL_PARENT_FOLDER = f"C:\\Datas\\HRLS_{DATE_STAMP}"
 
-# Define the user prompt for handling multiple versions
-USER_PROMPT = """
-Multiple versions found for some files. What would you like to do?
-1. Choose latest version
-2. Choose oldest version
-Enter your choice (1 or 2): """
+# ---------------------------------------------
+# Ensure Folder Exists
+# ---------------------------------------------
+if not os.path.exists(UPLOAD_FOLDER):
+    print(f"❌ Error: Folder '{UPLOAD_FOLDER}' does not exist.")
+    exit()
 
-# Function to normalize text (for comparison purposes)
+# ---------------------------------------------
+# Load Workbook and Sheets
+# ---------------------------------------------
+wb = load_workbook(EXCEL_FILE)
+ws_main = wb["Main"]
+ws_bal = wb["Business Approved List"]
+
+# ---------------------------------------------
+# Config Load Order
+# ---------------------------------------------
+config_load_order = [
+    "ValueList", "AttributeType", "UserDefinedTerm", "LineOfBusiness",
+    "Product", "ServiceCategory", "BenefitNetwork", "NetworkDefinitionComponent",
+    "BenefitPlanComponent", "WrapAroundBenefitPlan", "BenefitPlanRider",
+    "BenefitPlanTemplate", "Account", "BenefitPlan", "AccountPlanSelection"
+]
+
+# ---------------------------------------------
+# Helper Functions
+# ---------------------------------------------
+def trim_suffix(filename):
+    """Remove the date part from the filename."""
+    return re.sub(r'\.\d{4}-\d{2}-\d{2}\..*$', '', filename)
+
 def normalize_text(text):
-    return text.strip().lower()
+    """Normalize text: remove special characters, lowercase, remove spaces."""
+    return re.sub(r'[^a-zA-Z0-9.]', '', str(text)).strip().lower()
 
-# Function to get the file version based on the user's choice
-def prompt_user_for_multiversion_choice():
-    while True:
-        print(USER_PROMPT)
-        choice = input().strip()
-        if choice in ['1', '2']:
-            return choice
-        else:
-            print("Invalid input. Please enter 1 or 2.")
-
-# Function to find matching files
-def find_matching_file(config_type, config_name, folder_path, user_choice=None):
-    if "&" in config_name:
-        config_name = config_name.replace("&", "and")
-    
-    # Normalize the config type and name
-    normalized_config_type = normalize_text(config_type)
-    normalized_config_name = normalize_text(config_name)
-    
-    # Get all filenames without date suffixes
-    normalized_files = {
-        normalize_text(trim_suffix(f)): f
-        for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))
-    }
-
-    # Construct the expected pattern (without date & extension)
-    expected_pattern = f"{normalized_config_type}.{normalized_config_name}"
-
-    # Find all files that match the pattern (ignoring date suffix)
-    matching_files = [
-        f for norm_file, f in normalized_files.items() if expected_pattern in norm_file
-    ]
-
-    # If there are no matches, return None
-    if not matching_files:
-        print(f"❌ No match found for {expected_pattern}")
-        return None
-
-    # If there is only one match, return it directly
-    if len(matching_files) == 1:
-        print(f"✅ Match Found: {matching_files[0]}")
-        return matching_files[0]
-
-    # If there are multiple versions, use the user's choice
-    if user_choice == '1':  # Choose the latest version
-        return sorted(matching_files)[-1]  # Return the latest by date
-    elif user_choice == '2':  # Choose the oldest version
-        return sorted(matching_files)[0]  # Return the oldest by date
-
+def extract_date(filename):
+    """Extract date from filename."""
+    match = re.search(r'(\d{4}-\d{2}-\d{2})', filename)
+    if match:
+        return datetime.strptime(match.group(1), "%Y-%m-%d")
     return None
 
-# Function to trim the suffix from the filename (date part)
-def trim_suffix(filename):
-    return '.'.join(filename.split('.')[:-2])  # Remove the date and extension
+# ---------------------------------------------
+# Step 1: Prompt for Multi-Version Choice
+# ---------------------------------------------
+print("\n⚡ Multi-Version Files Detected!")
+print("Choose file selection strategy globally:")
+print("1️⃣  Latest Version")
+print("2️⃣  Oldest Version")
 
-# Main function to process the files
-def process_files(df_bal, selected_folders):
-    user_choice = prompt_user_for_multiversion_choice()  # Ask user about version choice
+while True:
+    user_choice = input("Enter your choice (1 or 2): ").strip()
+    if user_choice in ['1', '2']:
+        break
+    print("Invalid input. Please enter 1 or 2.")
 
-    for index, row in df_bal.iterrows():
-        config_type = row["Config Type"]
-        config_name = row["Config Name"]
+choose_latest = (user_choice == '1')  # Boolean flag
 
-        if pd.isna(config_name) or not str(config_name).strip():
-            continue
+# ---------------------------------------------
+# Step 2: Analyze All Files in UPLOAD_FOLDER
+# ---------------------------------------------
+print("\n🔍 Analyzing all files...")
 
-        if config_type in selected_folders:
-            matching_file = find_matching_file(config_type, config_name, selected_folders[config_type], user_choice)
+# Gather all files from subfolders
+all_files = {}
+for root, dirs, files in os.walk(UPLOAD_FOLDER):
+    for file in files:
+        normalized_name = normalize_text(trim_suffix(file))
+        full_path = os.path.join(root, file)
+        all_files.setdefault(normalized_name, []).append(full_path)
 
-            if matching_file:
-                # Mark the HRL as found
-                df_bal.at[index, "HRL Available?"] = "HRL Found"
-                source_path = os.path.join(selected_folders[config_type], matching_file)
-                
-                # Prepare target folder
-                target_folder = os.path.join(HRL_PARENT_FOLDER, config_type)
-                os.makedirs(target_folder, exist_ok=True)
-                target_path = os.path.join(target_folder, matching_file)
-                
-                # Copy the file to the new folder
-                shutil.copy2(source_path, target_path)
-                df_bal.at[index, "File Name is correct in export sheet"] = source_path
-            else:
-                df_bal.at[index, "HRL Available?"] = "Not Found"
+# Separate into single and multi-version dictionaries
+single_version_files = {}
+multi_version_files = {}
 
-    # Save updated data back to Excel
-    save_to_excel(df_bal)
+for base_name, file_list in all_files.items():
+    if len(file_list) == 1:
+        single_version_files[base_name] = file_list[0]
+    else:
+        multi_version_files[base_name] = file_list
 
-# Function to save the updated DataFrame to Excel
-def save_to_excel(df):
-    output_file = "updated_data.xlsx"
-    df.to_excel(output_file, index=False)
-    print(f"Data saved to {output_file}")
+print(f"✅ Single Version Files Detected: {len(single_version_files)}")
+print(f"✅ Multi Version Files Detected: {len(multi_version_files)}")
 
-# Example of how this logic is used
-if __name__ == "__main__":
-    # Load your Excel data into a pandas DataFrame (replace with your actual data)
-    df_bal = pd.read_excel("your_excel_file.xlsx")
+# ---------------------------------------------
+# Step 3: Load Business Approved List Sheet
+# ---------------------------------------------
+df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
+df_bal["Config Type"] = df_bal["Config Type"].astype(str).apply(normalize_text)
 
-    # Define the folder structure where the files are located
-    selected_folders = {
-        "ServiceCategory": "/path/to/ServiceCategory/folder",
-        # Add other config types and folder paths here
-    }
+# ---------------------------------------------
+# Step 4: Validate Config Load Order
+# ---------------------------------------------
+approved_config_types = set(df_bal["Config Type"].dropna().unique())
+available_folders = {normalize_text(f): os.path.join(UPLOAD_FOLDER, f) 
+                     for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))}
+selected_folders = {config: path for config, path in available_folders.items() if config in approved_config_types}
 
-    # Call the main processing function
-    process_files(df_bal, selected_folders)
+if not selected_folders:
+    print("❌ Error: No matching config folders found inside the parent folder.")
+    exit()
+
+df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(x) if x in config_load_order else -1)
+valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
+
+if not valid_orders.is_monotonic_increasing:
+    print("❌ Error: Invalid Order! Please arrange the data correctly.")
+    exit()
+
+df_bal.drop(columns=["Order"], inplace=True)
+
+# ---------------------------------------------
+# Step 5: Find and Copy Matching Files
+# ---------------------------------------------
+def find_matching_file(config_type, config_name):
+    normalized_type = normalize_text(config_type)
+    normalized_name = normalize_text(config_name)
+    expected_pattern = f"{normalized_type}.{normalized_name}"
+
+    # Single Version Match
+    if expected_pattern in single_version_files:
+        print(f"✅ [Single Version] Found for {expected_pattern}")
+        return single_version_files[expected_pattern]
+
+    # Multi Version Match
+    elif expected_pattern in multi_version_files:
+        files = multi_version_files[expected_pattern]
+        files_with_dates = [(f, extract_date(f)) for f in files if extract_date(f) is not None]
+
+        if not files_with_dates:
+            print(f"⚠️ Warning: No valid dates found for {expected_pattern}. Picking arbitrarily.")
+            return files[0]
+
+        files_with_dates.sort(key=lambda x: x[1], reverse=choose_latest)
+        chosen_file = files_with_dates[0][0]
+        print(f"✅ [Multi Version] Chose {'Latest' if choose_latest else 'Oldest'} for {expected_pattern}: {os.path.basename(chosen_file)}")
+        return chosen_file
+
+    # Not Found
+    print(f"❌ No file found for {expected_pattern}")
+    return None
+
+# ---------------------------------------------
+# Step 6: Update Excel and Copy Files
+# ---------------------------------------------
+for index, row in df_bal.iterrows():
+    config_type = row["Config Type"]
+    config_name = row["Config Name"]
+
+    if pd.isna(config_name) or not str(config_name).strip():
+        continue
+
+    matching_file_path = find_matching_file(config_type, config_name)
+
+    if matching_file_path:
+        df_bal.at[index, "HRL Available?"] = "HRL Found"
+        target_folder = os.path.join(HRL_PARENT_FOLDER, config_type)
+        os.makedirs(target_folder, exist_ok=True)
+        target_path = os.path.join(target_folder, os.path.basename(matching_file_path))
+        shutil.copy2(matching_file_path, target_path)
+        df_bal.at[index, "File Name is correct in export sheet"] = matching_file_path
+    else:
+        df_bal.at[index, "HRL Available?"] = "Not Found"
+
+# Update Excel
+for row_idx, row in df_bal.iterrows():
+    for col_idx, value in enumerate(row):
+        ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))
+
+wb.save(EXCEL_FILE)
+print(f"\n🎉 HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
+
