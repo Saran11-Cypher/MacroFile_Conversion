@@ -87,23 +87,40 @@ single_version_files = {}
 multi_version_files = defaultdict(list)
 
 print("🔄 Analyzing files for version categorization...")
-for config_type, folder_path in selected_folders.items():
-    # print(f"🔍 Analyzing folder: {folder_path}")
-    for file in os.listdir(folder_path):
-        if os.path.isfile(os.path.join(folder_path, file)):
+
+def categorize_files(folder_path):
+    single_version_files = {}
+    multi_version_files = defaultdict(list)
+    
+    all_files = 0
+    base_name_counter = {}
+
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            all_files += 1
+
             parts = file.split('.')
             if len(parts) >= 3:
-                config_name = parts[1]
-                key = (config_type, config_name)  # Include config_type to avoid clashes between folders
-                if key in single_version_files:
-                    # Move existing single to multi
-                    multi_version_files[key].append(single_version_files.pop(key))
-                    multi_version_files[key].append(file)
-                    multi_version_detected = True
-                elif key in multi_version_files:
-                    multi_version_files[key].append(file)
-                else:
-                    single_version_files[key] = file
+                config_name = parts[1]  # Pick only the middle part (real config name)
+            else:
+                continue  # Skip files that don't match the pattern
+
+            # Count how many times each config_name appears
+            if config_name in base_name_counter:
+                base_name_counter[config_name] += 1
+            else:
+                base_name_counter[config_name] = 1
+
+            # Categorize into single or multi
+            if config_name in single_version_files:
+                multi_version_files[config_name].append(file)
+                multi_version_files[config_name].append(single_version_files.pop(config_name)[0])
+            elif config_name in multi_version_files:
+                multi_version_files[config_name].append(file)
+            else:
+                single_version_files[config_name] = [file]
+
+    return single_version_files, multi_version_files, all_files
 multi_files_count = sum(len (files) for files in multi_version_files.values())
 print(f"✅ Categorization complete. {len(single_version_files)} single-version files and {len(multi_files_count)} multi-version files found.")
 
