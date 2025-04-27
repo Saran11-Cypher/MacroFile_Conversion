@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 import shutil
 from openpyxl import load_workbook
+from collections import defaultdict
 
 # ---------------------------------------------
 # Constants
@@ -55,6 +56,12 @@ def extract_date(filename):
         return datetime.strptime(match.group(1), "%Y-%m-%d")
     return None
 
+def extract_base_name (filename):
+    parts = filename.split(".")
+    if len(parts) >= 3:
+        return ".".join(parts[:2])
+    return os.path.splitext(filename)[0]
+
 # ---------------------------------------------
 # Step 1: Prompt for Multi-Version Choice
 # ---------------------------------------------
@@ -74,15 +81,21 @@ choose_latest = (user_choice == '1')  # Boolean flag
 # ---------------------------------------------
 # Step 2: Analyze All Files in UPLOAD_FOLDER
 # ---------------------------------------------
-print("\n🔍 Analyzing all files...")
+print("\n🔍 Analyzing all files...{UPLOAD_FOLDER}")
 
 # Gather all files from subfolders
 all_files = {}
 for root, dirs, files in os.walk(UPLOAD_FOLDER):
     for file in files:
-        normalized_name = normalize_text(trim_suffix(file))
         full_path = os.path.join(root, file)
-        all_files.setdefault(normalized_name, []).append(full_path)
+        all_files.append(full_path)
+print("f Total files found : {len(all_files)}")
+
+base_name_map = defaultdict(list)
+for path in all_files:
+    filename = os.path.basename(path)
+    base_name = extract_base_name(filename)
+    base_name_map[base_name](path)
 
 # Separate into single and multi-version dictionaries
 single_version_files = {}
@@ -184,4 +197,3 @@ for row_idx, row in df_bal.iterrows():
 
 wb.save(EXCEL_FILE)
 print(f"\n🎉 HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
-
