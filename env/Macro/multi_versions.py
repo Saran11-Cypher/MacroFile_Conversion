@@ -34,7 +34,7 @@ def trim_suffix(filename):
 
 def normalize_text(text):
     """Normalize text for matching."""
-    return re.sub(r'[^a-zA-Z0-9.]', '', str(text)).strip().lower()
+    return re.sub(r'[^a-zA-Z0-9._-]', '', str(text)).strip().lower()
 
 def extract_date_from_filename(filename):
     """Extract date from filename if available."""
