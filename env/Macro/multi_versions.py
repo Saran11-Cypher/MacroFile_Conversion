@@ -17,6 +17,7 @@ if not os.path.exists(UPLOAD_FOLDER):
     exit()
 
 # Load workbook and sheets
+print("🔄 Loading Excel workbook...")
 wb = load_workbook(EXCEL_FILE)
 ws_main = wb["Main"]
 ws_bal = wb["Business Approved List"]
@@ -47,10 +48,13 @@ def extract_date_from_filename(filename):
     return None
 
 # Load BAL sheet
+print("🔄 Loading Business Approved List sheet...")
 df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
 df_bal["Config Type"] = df_bal["Config Type"].astype(str).apply(normalize_text)
 
 approved_config_types = set(df_bal["Config Type"].dropna().unique())
+
+print(f"✅ Found {len(approved_config_types)} approved config types.")
 
 available_folders = {normalize_text(f): os.path.join(UPLOAD_FOLDER, f)
                      for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))}
@@ -60,6 +64,8 @@ selected_folders = {config: path for config, path in available_folders.items() i
 if not selected_folders:
     print("❌ Error: No matching config folders found inside the parent folder.")
     exit()
+
+print(f"✅ Found {len(selected_folders)} matching folders in the upload directory.")
 
 # STEP 1: Prompt user for version preference at the beginning
 while True:
@@ -80,7 +86,9 @@ multi_version_detected = False
 single_version_files = {}
 multi_version_files = defaultdict(list)
 
+print("🔄 Analyzing files for version categorization...")
 for config_type, folder_path in selected_folders.items():
+    print(f"🔍 Analyzing folder: {folder_path}")
     for file in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, file)):
             parts = file.split('.')
@@ -97,12 +105,16 @@ for config_type, folder_path in selected_folders.items():
                 else:
                     single_version_files[key] = file
 
+print(f"✅ Categorization complete. {len(single_version_files)} single-version files and {len(multi_version_files)} multi-version files found.")
+
 # STEP 3: Update "Main" sheet with file counts
+print("🔄 Updating 'Main' sheet with file counts...")
 for config_type, folder_path in selected_folders.items():
     uploaded_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
     ws_main.append([config_type, len(uploaded_files), "Pending", "Pending", "Pending"])
 
 # Assign order dynamically
+print("🔄 Assigning order to configurations based on the load order...")
 df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(x) if x in config_load_order else -1)
 valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
 
@@ -114,6 +126,7 @@ df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to find matching file
 def find_matching_file(config_type, config_name, folder_path):
+    print(f"🔍 Finding matching file for {config_type} - {config_name}...")
     normalized_config_type = normalize_text(config_type)
     normalized_config_name = normalize_text(config_name)
 
@@ -128,6 +141,7 @@ def find_matching_file(config_type, config_name, folder_path):
                 candidates.append((file, file_date))
 
     if not candidates:
+        print(f"❌ No matching files found for {config_type} - {config_name}.")
         return None
 
     # Sort candidates based on date
@@ -143,6 +157,7 @@ def find_matching_file(config_type, config_name, folder_path):
     return selected_file
 
 # Check for HRL availability and copy files
+print("🔄 Checking HRL availability and copying files...")
 for index, row in df_bal.iterrows():
     config_type = row["Config Type"]
     config_name = row["Config Name"]
@@ -166,6 +181,7 @@ for index, row in df_bal.iterrows():
             df_bal.at[index, "HRL Available?"] = "Not Found"
 
 # Write updated DataFrame to BAL sheet
+print("🔄 Writing updated DataFrame back to 'Business Approved List' sheet...")
 for row_idx, row in df_bal.iterrows():
     for col_idx, value in enumerate(row):
         ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))
