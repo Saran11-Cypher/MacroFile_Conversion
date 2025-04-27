@@ -121,8 +121,11 @@ def categorize_files(folder_path):
                 single_version_files[config_name] = [file]
 
     return single_version_files, multi_version_files, all_files
-multi_files_count = sum(len (files) for files in multi_version_files.values())
-print(f"✅ Categorization complete. {len(single_version_files)} single-version files and {len(multi_files_count)} multi-version files found.")
+
+single_version_files, multi_version_files, all_files = categorize_files(UPLOAD_FOLDER)
+
+multi_files_count = len(multi_version_files)
+print(f"✅ Categorization complete. {len(single_version_files)} single-version files and {multi_files_count} multi-version files found.")
 
 # STEP 3: Update "Main" sheet with file counts
 # print("🔄 Updating 'Main' sheet with file counts...")
@@ -144,12 +147,11 @@ df_bal.drop(columns=["Order"], inplace=True)
 # Function to find matching file
 def find_matching_file(config_type, config_name, folder_path):
     print(f"🔍 Finding matching file for {config_type}.{config_name}...")
+
     normalized_config_type = normalize_text(config_type)
     normalized_config_name = normalize_text(config_name)
-    print(f"Normalized config_type : {normalized_config_type} and Normalized config_name : {normalized_config_name}")
 
     expected_pattern = f"{normalized_config_type}.{normalized_config_name}"
-    print(f"Expected Pattern: {expected_pattern}")
 
     candidates = []
     for file in os.listdir(folder_path):
