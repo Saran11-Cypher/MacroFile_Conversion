@@ -17,7 +17,7 @@ if not os.path.exists(UPLOAD_FOLDER):
     exit()
 
 # Load workbook and sheets
-print("🔄 Loading Excel workbook...")
+# print("🔄 Loading Excel workbook...")
 wb = load_workbook(EXCEL_FILE)
 ws_main = wb["Main"]
 ws_bal = wb["Business Approved List"]
@@ -48,7 +48,7 @@ def extract_date_from_filename(filename):
     return None
 
 # Load BAL sheet
-print("🔄 Loading Business Approved List sheet...")
+# print("🔄 Loading Business Approved List sheet...")
 df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
 df_bal["Config Type"] = df_bal["Config Type"].astype(str).apply(normalize_text)
 
@@ -88,7 +88,7 @@ multi_version_files = defaultdict(list)
 
 print("🔄 Analyzing files for version categorization...")
 for config_type, folder_path in selected_folders.items():
-    print(f"🔍 Analyzing folder: {folder_path}")
+    # print(f"🔍 Analyzing folder: {folder_path}")
     for file in os.listdir(folder_path):
         if os.path.isfile(os.path.join(folder_path, file)):
             parts = file.split('.')
@@ -104,17 +104,17 @@ for config_type, folder_path in selected_folders.items():
                     multi_version_files[key].append(file)
                 else:
                     single_version_files[key] = file
-
-print(f"✅ Categorization complete. {len(single_version_files)} single-version files and {len(multi_version_files)} multi-version files found.")
+multi_files_count = sum(len (files) for files in multi_version_files.values())
+print(f"✅ Categorization complete. {len(single_version_files)} single-version files and {len(multi_files_count)} multi-version files found.")
 
 # STEP 3: Update "Main" sheet with file counts
-print("🔄 Updating 'Main' sheet with file counts...")
+# print("🔄 Updating 'Main' sheet with file counts...")
 for config_type, folder_path in selected_folders.items():
     uploaded_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
     ws_main.append([config_type, len(uploaded_files), "Pending", "Pending", "Pending"])
 
 # Assign order dynamically
-print("🔄 Assigning order to configurations based on the load order...")
+# print("🔄 Assigning order to configurations based on the load order...")
 df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(x) if x in config_load_order else -1)
 valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
 
@@ -126,11 +126,13 @@ df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to find matching file
 def find_matching_file(config_type, config_name, folder_path):
-    print(f"🔍 Finding matching file for {config_type} - {config_name}...")
+    print(f"🔍 Finding matching file for {config_type}.{config_name}...")
     normalized_config_type = normalize_text(config_type)
     normalized_config_name = normalize_text(config_name)
+    print(f"Normalized config_type : {normalized_config_type} and Normalized config_name : {normalized_config_name}")
 
     expected_pattern = f"{normalized_config_type}.{normalized_config_name}"
+    print(f"Expected Pattern: {expected_pattern}")
 
     candidates = []
     for file in os.listdir(folder_path):
