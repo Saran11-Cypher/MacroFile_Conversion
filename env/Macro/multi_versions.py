@@ -215,27 +215,6 @@ for row_idx, row in df_bal.iterrows():
 wb.save(EXCEL_FILE)
 print(f"\n✅ HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
 
-
-python multi_versions.py
-✅ Found 1 approved config types.
-✅ Found 1 matching folders in the upload directory.
-
-🔎 Do you want to pick the (L)atest or (O)ldest version for multi-versions? (L/O): l
-
-✅ You have selected to pick the **LATEST** version for all files.
-
-🔄 Analyzing files for version categorization...
-✅ Categorization complete. 4498 single-version files and 6521 multi-version files found.
-🔄 Checking HRL availability and copying files...
-🔍 Finding matching file for benefitplan.MAC03ESAPPOMAUnisysCorporation...
-Normalized CT: benefitplan and Normalized CN: mac03esappomaunisyscorporation
-Expected Pattern: benefitplan.mac03esappomaunisyscorporation
-Candidatees:[]
-❌ No matching files found for benefitplan - MAC03ESAPPOMAUnisysCorporation.
-
-✅ HRL files copied to 'C:\Datas\HRLS_20250427_183202' and Excel file updated successfully!
-
-
 config name : 000001-01-IAOA POSEveryday_ONCSR73perc_-UPQuad
 BenefitPlan.000001-01-IAOAPOSEverydayONCSR73_perc_-UPQuad.2025-01-01.a.hrl
 
@@ -246,3 +225,4 @@ BenefitPlan.Group-Medicare_P02_PPO-NewEnterpriseStoneandLimeCoInc.2025-01-01.a.h
 config name : Group Medicare_P02_PPONorth Allegheny School_District
 BenefitPlan.Group-Medicare_P02_PPO-NorthAlleghenySchoolDistrict.1800-01-01.a.hrl
 BenefitPlan.Group-Medicare_P02_PPO-NorthAlleghenySchoolDistrict.2025-01-01.a.hrl
+'000001-01-IAOAPOSEverydayPlusON-MIPPA': ['BenefitPlan.000001-01-IAOAPOSEverydayPlusON-MIPPA.1800-01-01.a.hrl'], '000001-01-IAOAPOSEverydayPlusON-PatientPref': ['BenefitPlan.000001-01-IAOAPOSEverydayPlusON-PatientPref.1800-01-01.a.hrl']
