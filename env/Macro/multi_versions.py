@@ -35,7 +35,7 @@ def trim_suffix(filename):
 
 def normalize_text(text):
     """Normalize text for matching."""
-    return re.sub(r'[^a-zA-Z0-9._-]', '', str(text)).strip().lower()
+    return re.sub(r'[^a-zA-Z0-9.]', '', str(text)).strip().lower()
 
 def extract_date_from_filename(filename):
     """Extract date from filename if available."""
@@ -101,30 +101,31 @@ def categorize_files(folder_path):
 
             parts = file.split('.')
             if len(parts) >= 3:
-                config_name = parts[1]  # Pick only the middle part (real config name)
+               config_name = parts[1] # Pick only the middle part (real config name)
             else:
                 continue  # Skip files that don't match the pattern
+            normalized_config_name = normalize_text(config_name)
 
             # Count how many times each config_name appears
-            if config_name in base_name_counter:
-                base_name_counter[config_name] += 1
+            if normalized_config_name in base_name_counter:
+                base_name_counter[normalized_config_name] += 1
             else:
-                base_name_counter[config_name] = 1
+                base_name_counter[normalized_config_name] = 1
 
             # Categorize into single or multi
-            if config_name in single_version_files:
-                multi_version_files[config_name].append(file)
-                multi_version_files[config_name].append(single_version_files.pop(config_name)[0])
-            elif config_name in multi_version_files:
-                multi_version_files[config_name].append(file)
+            if normalized_config_name in single_version_files:
+                multi_version_files[normalized_config_name].append(file)
+                multi_version_files[normalized_config_name].append(single_version_files.pop(normalized_config_name)[0])
+            elif normalized_config_name in multi_version_files:
+                multi_version_files[normalized_config_name].append(file)
             else:
-                single_version_files[config_name] = [file]
+                single_version_files[normalized_config_name] = [file]
 
     return single_version_files, multi_version_files, all_files
 
 single_version_files, multi_version_files, all_files = categorize_files(UPLOAD_FOLDER)
 
-multi_files_count = len(multi_version_files)
+multi_files_count = sum(len (files) for files in multi_version_files.values())
 print(f"✅ Categorization complete. {len(single_version_files)} single-version files and {multi_files_count} multi-version files found.")
 
 # STEP 3: Update "Main" sheet with file counts
@@ -146,17 +147,18 @@ df_bal.drop(columns=["Order"], inplace=True)
 
 # Function to find matching file
 def find_matching_file(config_type, config_name):
-    print(f"🔍 Finding matching file for {config_type}.{config_name}...")
+    if "&" in config_name:
+        config_name = config_name.replace("&", "and")
 
-    normalized_key = f"{normalize_text(config_type)}.{normalize_text(config_name)}"
+    normalized_key = f"{normalize_text(config_name)}"
+    print(f"🔍 Finding matching file for {normalized_key}")
 
     # Step 1: Search in single-version files
+    print(f"single -version: {single_version_files}")
     if normalized_key in single_version_files:
         print(f"✅ Found in single-version files: {single_version_files[normalized_key][0]}")
         return single_version_files[normalized_key][0]
-
-    # Step 2: Search in multi-version files
-    if normalized_key in multi_version_files:
+    elif normalized_key in multi_version_files:
         candidates = multi_version_files[normalized_key]
 
         # Sort based on date extracted from filenames
@@ -176,7 +178,7 @@ def find_matching_file(config_type, config_name):
         print(f"✅ Found in multi-version files, selected: {selected_file}")
         return selected_file
 
-    print(f"❌ No matching file found for {config_type}.{config_name}.")
+    print(f"❌ No matching file found for {normalized_key}")
     return None
 
     # Sort candidates based on date
@@ -192,7 +194,7 @@ for index, row in df_bal.iterrows():
         continue
 
     if config_type in selected_folders:
-        matching_file = find_matching_file(config_type, config_name, selected_folders[config_type])
+        matching_file = find_matching_file(config_type, config_name)
 
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
@@ -214,15 +216,3 @@ for row_idx, row in df_bal.iterrows():
 
 wb.save(EXCEL_FILE)
 print(f"\n✅ HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
-
-config name : 000001-01-IAOA POSEveryday_ONCSR73perc_-UPQuad
-BenefitPlan.000001-01-IAOAPOSEverydayONCSR73_perc_-UPQuad.2025-01-01.a.hrl
-
-config name : Group-Medicare_P02_PPO-New Enterprise & StoneandLimeCoInc
-BenefitPlan.Group-Medicare_P02_PPO-NewEnterpriseStoneandLimeCoInc.1800-01-01.a.hrl
-BenefitPlan.Group-Medicare_P02_PPO-NewEnterpriseStoneandLimeCoInc.2025-01-01.a.hrl
-
-config name : Group Medicare_P02_PPONorth Allegheny School_District
-BenefitPlan.Group-Medicare_P02_PPO-NorthAlleghenySchoolDistrict.1800-01-01.a.hrl
-BenefitPlan.Group-Medicare_P02_PPO-NorthAlleghenySchoolDistrict.2025-01-01.a.hrl
-'000001-01-IAOAPOSEverydayPlusON-MIPPA': ['BenefitPlan.000001-01-IAOAPOSEverydayPlusON-MIPPA.1800-01-01.a.hrl'], '000001-01-IAOAPOSEverydayPlusON-PatientPref': ['BenefitPlan.000001-01-IAOAPOSEverydayPlusON-PatientPref.1800-01-01.a.hrl']
