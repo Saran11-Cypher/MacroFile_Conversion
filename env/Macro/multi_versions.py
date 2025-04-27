@@ -81,27 +81,31 @@ choose_latest = (user_choice == '1')  # Boolean flag
 # ---------------------------------------------
 # Step 2: Analyze All Files in UPLOAD_FOLDER
 # ---------------------------------------------
-print("\n🔍 Analyzing all files...{UPLOAD_FOLDER}")
+
 
 # Gather all files from subfolders
-all_files = {}
+all_files = 0
+for root, dirs, files in os.walk(UPLOAD_FOLDER):
+    for file in files:
+        all_files+=1
+        
+print(f"Total files found : (all_files)")
+
+base_name_map = defaultdict[list]
+
 for root, dirs, files in os.walk(UPLOAD_FOLDER):
     for file in files:
         full_path = os.path.join(root, file)
-        all_files.append(full_path)
-print("f Total files found : {len(all_files)}")
-
-base_name_map = defaultdict(list)
-for path in all_files:
-    filename = os.path.basename(path)
-    base_name = extract_base_name(filename)
-    base_name_map[base_name](path)
-
+        base_name = extract_base_name(file)
+        base_name_map[base_name].append(full_path)
+        
+unique_names = len(base_name_map)
+print(f" Unique names : {unique_names}")
 # Separate into single and multi-version dictionaries
 single_version_files = {}
 multi_version_files = {}
 
-for base_name, file_list in all_files.items():
+for base_name, file_list in base_name_map.items():
     if len(file_list) == 1:
         single_version_files[base_name] = file_list[0]
     else:
@@ -109,6 +113,7 @@ for base_name, file_list in all_files.items():
 
 print(f"✅ Single Version Files Detected: {len(single_version_files)}")
 print(f"✅ Multi Version Files Detected: {len(multi_version_files)}")
+print(f"Total Number: {len(single_version_files) +  len(multi_version_files)}")
 
 # ---------------------------------------------
 # Step 3: Load Business Approved List Sheet
