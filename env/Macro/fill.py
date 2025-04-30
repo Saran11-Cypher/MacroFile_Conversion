@@ -59,16 +59,26 @@ if not selected_folders:
 
 print(f"✅ Found {len(selected_folders)} matching folders in the upload directory.")
 
-# Step 1: Prompt user globally for latest/oldest
+# Step 1: Prompt user globally for latest/oldest/both
 while True:
-    user_choice = input("\n🔎 Do you want to pick the (L)atest or (O)ldest version for multi-versions? (L/O): ").strip().lower()
-    if user_choice in ('l', 'o'):
+    user_choice = input(
+        "\n🔎 Do you want to pick the (L)atest, (O)ldest, or (B)oth versions for multi-versions? (L/O/B): "
+    ).strip().lower()
+    if user_choice in ('l', 'o', 'b'):
         break
     else:
-        print("❗ Invalid input. Please type 'L' for latest or 'O' for oldest.")
+        print("❗ Invalid input. Please type 'L' for latest, 'O' for oldest, or 'B' for both.")
 
-selected_version = 'latest' if user_choice == 'l' else 'oldest'
-print(f"\n✅ You have selected to pick the **{selected_version.upper()}** version for all files.\n")
+if user_choice == 'b':
+    selected_version = 'both'
+    print("\n✅ You have selected to pick **BOTH** the latest and oldest versions for all files.\n")
+elif user_choice == 'l':
+    selected_version = 'latest'
+    print("\n✅ You have selected to pick the **LATEST** version for all files.\n")
+else:
+    selected_version = 'oldest'
+    print("\n✅ You have selected to pick the **OLDEST** version for all files.\n")
+
 
 # STEP 2: Analyze and process each config type separately
 def categorize_files(folder_path):
@@ -114,26 +124,28 @@ def find_matching_file(config_name, single_version_files, multi_version_files):
 
     if normalized_key in single_version_files:
         print(f"✅ Found in single-version files: {single_version_files[normalized_key][0]}")
-        return single_version_files[normalized_key][0]
+        return [single_version_files[normalized_key][0]]
     elif normalized_key in multi_version_files:
         candidates = multi_version_files[normalized_key]
         candidates_with_dates = []
         for file in candidates:
             file_date = extract_date_from_filename(file)
             candidates_with_dates.append((file, file_date))
-        
+
         candidates_with_dates.sort(key=lambda x: (x[1] or datetime.min))
+
         if selected_version == 'latest':
-            selected_file = candidates_with_dates[-1][0]
-        else:
-            selected_file = candidates_with_dates[0][0]
-        
-        print(f"✅ Found in multi-version files, selected: {selected_file}")
-        return selected_file
+            selected_files = [candidates_with_dates[-1][0]]
+        elif selected_version == 'oldest':
+            selected_files = [candidates_with_dates[0][0]]
+        else:  # both
+            selected_files = list({candidates_with_dates[0][0], candidates_with_dates[-1][0]})  # avoid duplicates
+
+        print(f"✅ Found in multi-version files, selected: {selected_files}")
+        return selected_files
 
     print(f"❌ No matching file found for {normalized_key}")
-    return None
-
+    return []
 # Main Loop: Process each config type
 print("🔄 Checking HRL availability and copying files...")
 
