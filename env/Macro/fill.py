@@ -188,11 +188,4 @@ print(f"\n✅ HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated s
 
 
 
-Traceback (most recent call last):
-  File "C:\Users\n925072\Downloads\MacroFile_Conversion-master\MacroFile_Conversion-master\New folder\convertor\fill.py", line 171, in <module>
-    source_path = os.path.join(folder_path, matching_file)
-  File "C:\Program Files\Python\310\lib\ntpath.py", line 143, in join
-    genericpath._check_arg_types('join', path, *paths)
-  File "C:\Program Files\Python\310\lib\genericpath.py", line 152, in _check_arg_types
-    raise TypeError(f'{funcname}() argument must be str, bytes, or '
-TypeError: join() argument must be str, bytes, or os.PathLike object, not 'list'
+
