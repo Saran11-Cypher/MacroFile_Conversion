@@ -27,9 +27,6 @@ config_load_order = [
     "BenefitPlanTemplate", "Account", "BenefitPlan", "AccountPlanSelection"
 ]
 
-def trim_suffix(filename):
-    return re.sub(r'\.\d{4}-\d{2}-\d{2}\..*$', '', filename)
-
 def normalize_text(text):
     return re.sub(r'[^a-zA-Z0-9.]', '', str(text)).strip().lower()
 
@@ -42,6 +39,7 @@ def extract_date_from_filename(filename):
             return None
     return None
 
+# Load and normalize data
 df_bal = pd.read_excel(EXCEL_FILE, sheet_name="Business Approved List", dtype=str)
 df_bal["Config Type"] = df_bal["Config Type"].astype(str).apply(normalize_text)
 
@@ -59,7 +57,7 @@ if not selected_folders:
 
 print(f"✅ Found {len(selected_folders)} matching folders in the upload directory.")
 
-# Step 1: Prompt user globally for latest/oldest/both
+# Global user choice for version selection
 while True:
     user_choice = input(
         "\n🔎 Do you want to pick the (L)atest, (O)ldest, or (B)oth versions for multi-versions? (L/O/B): "
@@ -69,18 +67,9 @@ while True:
     else:
         print("❗ Invalid input. Please type 'L' for latest, 'O' for oldest, or 'B' for both.")
 
-if user_choice == 'b':
-    selected_version = 'both'
-    print("\n✅ You have selected to pick **BOTH** the latest and oldest versions for all files.\n")
-elif user_choice == 'l':
-    selected_version = 'latest'
-    print("\n✅ You have selected to pick the **LATEST** version for all files.\n")
-else:
-    selected_version = 'oldest'
-    print("\n✅ You have selected to pick the **OLDEST** version for all files.\n")
+selected_version = {'l': 'latest', 'o': 'oldest', 'b': 'both'}[user_choice]
+print(f"\n✅ You have selected to pick **{selected_version.upper()}** version(s) for all files.\n")
 
-
-# STEP 2: Analyze and process each config type separately
 def categorize_files(folder_path):
     single_version_files = {}
     multi_version_files = defaultdict(list)
@@ -104,7 +93,7 @@ def categorize_files(folder_path):
     
     return single_version_files, multi_version_files
 
-# Assign order dynamically
+# Validate config load order
 df_bal["Order"] = df_bal["Config Type"].apply(lambda x: config_load_order.index(x) if x in config_load_order else -1)
 valid_orders = df_bal[df_bal["Order"] >= 0]["Order"]
 
@@ -114,7 +103,6 @@ if not valid_orders.is_monotonic_increasing:
 
 df_bal.drop(columns=["Order"], inplace=True)
 
-# Function to find matching file
 def find_matching_file(config_name, single_version_files, multi_version_files):
     if "&" in config_name:
         config_name = config_name.replace("&", "and")
@@ -127,11 +115,7 @@ def find_matching_file(config_name, single_version_files, multi_version_files):
         return [single_version_files[normalized_key][0]]
     elif normalized_key in multi_version_files:
         candidates = multi_version_files[normalized_key]
-        candidates_with_dates = []
-        for file in candidates:
-            file_date = extract_date_from_filename(file)
-            candidates_with_dates.append((file, file_date))
-
+        candidates_with_dates = [(file, extract_date_from_filename(file)) for file in candidates]
         candidates_with_dates.sort(key=lambda x: (x[1] or datetime.min))
 
         if selected_version == 'latest':
@@ -139,23 +123,21 @@ def find_matching_file(config_name, single_version_files, multi_version_files):
         elif selected_version == 'oldest':
             selected_files = [candidates_with_dates[0][0]]
         else:  # both
-            selected_files = list({candidates_with_dates[0][0], candidates_with_dates[-1][0]})  # avoid duplicates
+            selected_files = list({candidates_with_dates[0][0], candidates_with_dates[-1][0]})
 
         print(f"✅ Found in multi-version files, selected: {selected_files}")
         return selected_files
 
     print(f"❌ No matching file found for {normalized_key}")
     return []
-# Main Loop: Process each config type
+
+# Main loop
 print("🔄 Checking HRL availability and copying files...")
 
 for config_type, folder_path in selected_folders.items():
     print(f"\n📂 Processing Config Type: {config_type}")
 
-    # Analyze files for this config type folder
     single_version_files, multi_version_files = categorize_files(folder_path)
-
-    # Filter rows belonging to this config type
     config_type_rows = df_bal[df_bal["Config Type"] == config_type]
 
     for index, row in config_type_rows.iterrows():
@@ -168,21 +150,27 @@ for config_type, folder_path in selected_folders.items():
 
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
-            for matching_files in matching_file:
-                source_path = os.path.join(folder_path, matching_file)
+            for matched_file in matching_file:
+                source_path = os.path.join(folder_path, matched_file)
                 target_folder = os.path.join(HRL_PARENT_FOLDER, config_type)
                 os.makedirs(target_folder, exist_ok=True)
-                target_path = os.path.join(target_folder, matching_file)
+                target_path = os.path.join(target_folder, matched_file)
                 shutil.copy2(source_path, target_path)
-                df_bal.at[index, "File Name is correct in export sheet"] = source_path
+
+                # If multiple files, concatenate paths
+                current_value = df_bal.at[index, "File Name is correct in export sheet"]
+                if pd.isna(current_value) or not current_value:
+                    df_bal.at[index, "File Name is correct in export sheet"] = source_path
+                else:
+                    df_bal.at[index, "File Name is correct in export sheet"] += f", {source_path}"
         else:
             df_bal.at[index, "HRL Available?"] = "Not Found"
 
-# Write updated DataFrame to BAL sheet
+# Update Excel sheet
 print("🔄 Writing updated DataFrame back to 'Business Approved List' sheet...")
 for row_idx, row in df_bal.iterrows():
     for col_idx, value in enumerate(row):
-        ws_bal.cell(row=row_idx+2, column=col_idx+1, value=str(value))
+        ws_bal.cell(row=row_idx + 2, column=col_idx + 1, value=str(value))
 
 wb.save(EXCEL_FILE)
 print(f"\n✅ HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
