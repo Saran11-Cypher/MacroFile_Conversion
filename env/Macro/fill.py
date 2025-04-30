@@ -168,12 +168,13 @@ for config_type, folder_path in selected_folders.items():
 
         if matching_file:
             df_bal.at[index, "HRL Available?"] = "HRL Found"
-            source_path = os.path.join(folder_path, matching_file)
-            target_folder = os.path.join(HRL_PARENT_FOLDER, config_type)
-            os.makedirs(target_folder, exist_ok=True)
-            target_path = os.path.join(target_folder, matching_file)
-            shutil.copy2(source_path, target_path)
-            df_bal.at[index, "File Name is correct in export sheet"] = source_path
+            for matching_files in matching_file:
+                source_path = os.path.join(folder_path, matching_file)
+                target_folder = os.path.join(HRL_PARENT_FOLDER, config_type)
+                os.makedirs(target_folder, exist_ok=True)
+                target_path = os.path.join(target_folder, matching_file)
+                shutil.copy2(source_path, target_path)
+                df_bal.at[index, "File Name is correct in export sheet"] = source_path
         else:
             df_bal.at[index, "HRL Available?"] = "Not Found"
 
@@ -185,7 +186,3 @@ for row_idx, row in df_bal.iterrows():
 
 wb.save(EXCEL_FILE)
 print(f"\n✅ HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
-
-
-
-
