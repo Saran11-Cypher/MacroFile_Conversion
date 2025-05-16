@@ -5,6 +5,7 @@ from datetime import datetime
 import shutil
 from openpyxl import load_workbook
 from collections import defaultdict
+from openpyxl.styles import PatternFill
 
 # Constants
 EXCEL_FILE = "C:\\Users\\n925072\\Downloads\\MacroFile_Conversion-master\\MacroFile_Conversion-master\\New folder\\convertor\\Macro_Functional_Excel.xlsx"
@@ -82,7 +83,13 @@ if not selected_folders:
     exit()
 
 print(f"✅ Found {len(selected_folders)} matching folders in the upload directory.")
+# Process each selected folder
+for config_type, folder_path in selected_folders.items():
+    uploaded_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    file_count = len(uploaded_files)
 
+    # Update the "Main" sheet dynamically
+    ws_main.append([config_type, file_count, "Pending", "Pending", "Pending"])
 # Global user choice
 while True:
     user_choice = input(
@@ -170,6 +177,42 @@ print("🔄 Writing updated DataFrame back to 'Business Approved List' sheet..."
 for row_idx, row in df_bal.iterrows():
     for col_idx, value in enumerate(row):
         ws_bal.cell(row=row_idx + 2, column=col_idx + 1, value=str(value))
+
+# Define colors
+red_fill = PatternFill(start_color='FFC7CE', end_color='FFC7CE', fill_type='solid')    # Light Red
+green_fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')  # Light Green
+blue_fill = PatternFill(start_color='BDD7EE', end_color='BDD7EE', fill_type='solid')   # Light Blue
+
+# Find column indexes
+header_row = next(ws_bal.iter_rows(min_row=1, max_row=1, values_only=True))
+config_type_col = header_row.index("Config Type") + 1
+config_name_col = header_row.index("Config Name") + 1
+
+# Apply color coding
+for row in range(2, ws_bal.max_row + 1):
+    config_type = normalize_text(ws_bal.cell(row=row, column=config_type_col).value)
+    config_name = normalize_text(ws_bal.cell(row=row, column=config_name_col).value)
+
+    if config_type in selected_folders:
+        folder_path = selected_folders[config_type]
+        _, multi_version_files = categorize_files(folder_path)
+
+        # Count total versions for that config name
+        total_versions = 0
+        if config_name in multi_version_files:
+            total_versions = len(multi_version_files[config_name])
+        elif config_name:  # It could be single version
+            total_versions = 1
+
+        cell = ws_bal.cell(row=row, column=config_name_col)
+
+        if total_versions == 1:
+            cell.fill = red_fill
+        elif total_versions == 2:
+            cell.fill = green_fill
+        elif total_versions > 2:
+            cell.fill = blue_fill
+
 
 wb.save(EXCEL_FILE)
 print(f"\n✅ HRL files copied to '{HRL_PARENT_FOLDER}' and Excel file updated successfully!")
